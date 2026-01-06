@@ -1,0 +1,7 @@
+
+services:
+  - type: web
+    name: employee-orga-app
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
