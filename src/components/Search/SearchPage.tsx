@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search as SearchIcon } from 'lucide-react';
 import { useData } from '../../context/DataContext';
-import Card from '../UI/Card';
 import Input from '../UI/Input';
 
 const SearchPage: React.FC = () => {
@@ -92,23 +91,37 @@ const SearchPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="results-grid">
+      <div className="results-list">
+        <div className="list-header item-row">
+          <div className="col-avatar"></div>
+          <div className="col-name">Name</div>
+          <div className="col-role">Role</div>
+          <div className="col-level">Level 9</div>
+          <div className="col-status">Status</div>
+          <div className="col-arrow"></div>
+        </div>
+
         {filteredEmployees.map(emp => (
-          <Card
+          <div
             key={emp.id}
-            hover
-            className="employee-card"
+            className="item-row hoverable"
+            onClick={() => navigate(`/employee/${emp.id}`)}
           >
-            <div className="card-content" onClick={() => navigate(`/employee/${emp.id}`)}>
+            <div className="col-avatar">
               <div className="emp-avatar">{emp.initials}</div>
-              <div className="emp-details">
-                <h3>{emp.lastName} {emp.firstName}</h3>
-                <span className="role-badge">{emp.role}</span>
-                <span className="meta">{emp.level9}</span>
-              </div>
+            </div>
+            <div className="col-name">
+              <strong>{emp.lastName}</strong> {emp.firstName}
+            </div>
+            <div className="col-role">
+              <span className="role-badge">{emp.role}</span>
+            </div>
+            <div className="col-level">{emp.level9}</div>
+            <div className="col-status">
               <div className={`status-dot ${emp.status.toLowerCase()}`}></div>
             </div>
-          </Card>
+            <div className="col-arrow">→</div>
+          </div>
         ))}
 
         {((query || levelQuery) && filteredEmployees.length === 0) && (
@@ -121,6 +134,7 @@ const SearchPage: React.FC = () => {
       <style>{`
         .search-page {
           padding-top: var(--space-xl);
+          padding-bottom: var(--space-xl);
         }
         .search-header {
           padding: var(--space-xl);
@@ -150,71 +164,86 @@ const SearchPage: React.FC = () => {
           color: var(--text-muted);
         }
         
-        .results-grid {
+        .results-list {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .item-row {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: var(--space-md);
-          padding-bottom: var(--space-xl);
+          grid-template-columns: 60px 2fr 1.5fr 1.5fr 80px 40px;
+          align-items: center;
+          padding: 12px var(--space-md);
+          background: var(--surface);
+          border-bottom: 1px solid var(--border-light);
+          color: var(--text-main);
+          transition: background 0.2s;
         }
         
-        .employee-card {
-          cursor: pointer;
+        .list-header {
+          background: transparent;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          font-weight: 600;
+          border-bottom: 2px solid var(--border);
         }
-        .card-content {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md);
+
+        .item-row.hoverable { cursor: pointer; }
+        .item-row.hoverable:hover {
+          background: var(--surface-alt);
         }
+        
+        .col-avatar { display: flex; justify-content: center; }
+        .col-name { font-size: 1rem; }
+        .col-role { display: flex; }
+        .col-status { display: flex; justify-content: center; }
+        .col-arrow { color: var(--text-light); opacity: 0; transition: opacity 0.2s; }
+        .item-row:hover .col-arrow { opacity: 1; }
+
         .emp-avatar {
-          width: 50px;
-          height: 50px;
-          background: linear-gradient(135deg, var(--primary-light), white);
-          color: var(--primary);
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+          color: white;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: 700;
-          font-size: 1.1rem;
-          border: 1px solid var(--border);
+          font-size: 0.9rem;
+          box-shadow: var(--shadow-sm);
         }
-        .emp-details {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-        }
-        .emp-details h3 {
-          font-size: 1rem;
-          margin-bottom: 2px;
-        }
+        
         .role-badge {
           font-size: 0.75rem;
-          background: var(--secondary-light);
-          color: var(--secondary);
+          background: var(--surface-alt);
+          color: var(--text-light);
+          border: 1px solid var(--border);
           padding: 2px 8px;
           border-radius: 12px;
-          align-self: flex-start;
-          margin-bottom: 4px;
         }
-        .meta {
-          font-size: 0.8rem;
-          color: var(--text-light);
+        .item-row:hover .role-badge {
+            border-color: var(--primary);
+            color: var(--primary);
         }
         
         .status-dot {
-          width: 10px;
-          height: 10px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
         }
-        .status-dot.active { background: var(--success); box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(16, 185, 129, 0.2); }
+        .status-dot.active { background: var(--success); box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); }
         .status-dot.inactive { background: var(--text-light); }
         
         .no-results {
-          grid-column: 1 / -1;
           text-align: center;
           color: var(--text-muted);
           padding: var(--space-xl);
           font-style: italic;
+          background: var(--surface);
+          border-radius: var(--radius);
         }
       `}</style>
     </div>

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, MapPin, Plus, Trash2, Edit2, Save } from 'lucide-react';
 import { useData } from '../../context/DataContext';
-import { type Relationship } from '../../types';
+import { type Relationship, type Employee } from '../../types';
 import Card from '../UI/Card';
 import Modal from '../UI/Modal';
 import Input from '../UI/Input';
@@ -19,6 +19,10 @@ const ProfilePage: React.FC = () => {
     // Relationship Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRel, setEditingRel] = useState<Relationship | null>(null);
+
+    // Autocomplete State
+    const [suggestions, setSuggestions] = useState<Employee[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState<'lastName' | 'initials' | null>(null);
 
     // Form State
     const [formData, setFormData] = useState<Partial<Relationship>>({
@@ -59,6 +63,42 @@ const ProfilePage: React.FC = () => {
             });
         }
         setIsModalOpen(true);
+        setSuggestions([]);
+        setShowSuggestions(null);
+    };
+
+    const handleFieldChange = (field: keyof Relationship, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+
+        if (field === 'targetLastName' || field === 'targetInitials') {
+            if (value.length < 2) {
+                setSuggestions([]);
+                setShowSuggestions(null);
+                return;
+            }
+
+            const lowerVal = value.toLowerCase();
+            const matches = employees.filter(e => {
+                if (field === 'targetLastName') return e.lastName.toLowerCase().includes(lowerVal);
+                if (field === 'targetInitials') return e.initials.toLowerCase().includes(lowerVal);
+                return false;
+            }).slice(0, 5); // Limit to 5 suggestions
+
+            setSuggestions(matches);
+            setShowSuggestions(field === 'targetLastName' ? 'lastName' : 'initials');
+        }
+    };
+
+    const selectSuggestion = (emp: Employee) => {
+        setFormData(prev => ({
+            ...prev,
+            targetLastName: emp.lastName,
+            targetFirstName: emp.firstName,
+            targetInitials: emp.initials,
+            targetLevel9: emp.level9
+        }));
+        setSuggestions([]);
+        setShowSuggestions(null);
     };
 
     const handleSave = () => {
@@ -195,29 +235,53 @@ const ProfilePage: React.FC = () => {
 
                     <div className="divider">Target Person Details</div>
 
-                    <div className="row-2">
-                        <Input
-                            label="Last Name"
-                            value={formData.targetLastName}
-                            onChange={e => setFormData({ ...formData, targetLastName: e.target.value })}
-                        />
+                    <div className="row-2 relative-container">
+                        <div className="input-group">
+                            <Input
+                                label="Last Name"
+                                value={formData.targetLastName}
+                                onChange={e => handleFieldChange('targetLastName', e.target.value)}
+                                autoComplete="off"
+                            />
+                            {showSuggestions === 'lastName' && suggestions.length > 0 && (
+                                <ul className="suggestions-list">
+                                    {suggestions.map(emp => (
+                                        <li key={emp.id} onClick={() => selectSuggestion(emp)}>
+                                            <strong>{emp.lastName}</strong> {emp.firstName} ({emp.initials})
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                         <Input
                             label="First Name"
                             value={formData.targetFirstName}
-                            onChange={e => setFormData({ ...formData, targetFirstName: e.target.value })}
+                            onChange={e => handleFieldChange('targetFirstName', e.target.value)}
                         />
                     </div>
 
-                    <div className="row-2">
-                        <Input
-                            label="Initials"
-                            value={formData.targetInitials}
-                            onChange={e => setFormData({ ...formData, targetInitials: e.target.value })}
-                        />
+                    <div className="row-2 relative-container">
+                        <div className="input-group">
+                            <Input
+                                label="Initials"
+                                value={formData.targetInitials}
+                                onChange={e => handleFieldChange('targetInitials', e.target.value)}
+                                autoComplete="off"
+                            />
+                            {showSuggestions === 'initials' && suggestions.length > 0 && (
+                                <ul className="suggestions-list">
+                                    {suggestions.map(emp => (
+                                        <li key={emp.id} onClick={() => selectSuggestion(emp)}>
+                                            {emp.initials} - {emp.lastName}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                         <Input
                             label="Level 9"
                             value={formData.targetLevel9}
-                            onChange={e => setFormData({ ...formData, targetLevel9: e.target.value })}
+                            onChange={e => handleFieldChange('targetLevel9', e.target.value)}
                         />
                     </div>
 
@@ -421,6 +485,37 @@ const ProfilePage: React.FC = () => {
         .text-center { text-align: center; }
         .p-4 { padding: var(--space-md); }
         .text-sm { font-size: 0.85rem; }
+
+        .relative-container { position: relative; overflow: visible; }
+        .input-group { position: relative; }
+        
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 50;
+            max-height: 200px;
+            overflow-y: auto;
+            list-style: none;
+            margin-top: 4px;
+        }
+        .suggestions-list li {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+        .suggestions-list li:last-child { border-bottom: none; }
+        .suggestions-list li:hover {
+            background: var(--surface-alt);
+            color: var(--primary);
+        }
       `}</style>
         </div>
     );
