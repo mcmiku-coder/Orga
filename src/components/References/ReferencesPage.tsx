@@ -6,9 +6,11 @@ import type { HierarchyLevel } from '../../types';
 type ReferenceType = 'Employee' | 'L3' | 'L4' | 'L5' | 'L6' | 'L7' | 'L8' | 'L9';
 
 const ReferencesPage: React.FC = () => {
-    const { hierarchy, employees, addHierarchyLevel, deleteHierarchyLevel, updateHierarchyParent, updateHierarchyLevel, addEmployee, updateEmployee } = useData();
+    const { hierarchy, employees, addHierarchyLevel, deleteHierarchyLevel, updateHierarchyParent, updateHierarchyLevel, addEmployee, updateEmployee, deleteEmployee } = useData();
     const [selectedType, setSelectedType] = useState<ReferenceType>('L9');
     const [newItemName, setNewItemName] = useState('');
+    const [newItemFirstName, setNewItemFirstName] = useState('');
+    const [newItemInitials, setNewItemInitials] = useState('');
     const [newItemParent, setNewItemParent] = useState<string>('');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingName, setEditingName] = useState<string>('');
@@ -37,7 +39,9 @@ const ReferencesPage: React.FC = () => {
         if (selectedType === 'Employee') {
             return employees.map(emp => ({
                 id: String(emp.id),
-                name: `${emp.lastName} ${emp.firstName}`,
+                lastName: emp.lastName,
+                firstName: emp.firstName,
+                name: `${emp.lastName} ${emp.firstName}`, // For generic usage
                 initials: emp.initials,
                 role: emp.role,
                 parentId: emp.level9,
@@ -61,24 +65,24 @@ const ReferencesPage: React.FC = () => {
         if (!newItemName.trim()) return;
 
         if (selectedType === 'Employee') {
-            // Create new employee with minimal required fields
-            const nameParts = newItemName.trim().split(' ');
-            const lastName = nameParts[0] || 'Unknown';
-            const firstName = nameParts.slice(1).join(' ') || 'Employee';
-            const initials = (lastName[0] + (firstName[0] || '')).toUpperCase();
+            if (!newItemName.trim() || !newItemFirstName.trim()) return;
+
+            const initials = newItemInitials.trim().toUpperCase() ||
+                (newItemName[0] + (newItemFirstName[0] || '')).toUpperCase();
 
             const newEmployee = {
-                id: Date.now(),
-                lastName,
-                firstName,
-                initials,
+                lastName: newItemName.trim(),
+                firstName: newItemFirstName.trim(),
+                initials: initials,
                 role: 'Rel' as const,
                 level9: newItemParent || hierarchy.find(h => h.level === 9)?.id || '',
                 status: 'Active' as const
             };
 
-            addEmployee(newEmployee);
+            addEmployee(newEmployee as any);
             setNewItemName('');
+            setNewItemFirstName('');
+            setNewItemInitials('');
             setNewItemParent('');
             return;
         }
@@ -101,7 +105,9 @@ const ReferencesPage: React.FC = () => {
 
     const handleDelete = (id: string) => {
         if (selectedType === 'Employee') {
-            alert('Employee deletion should be done from the profile page.');
+            if (confirm(`Delete employee and all their data?`)) {
+                deleteEmployee(Number(id));
+            }
             return;
         }
         if (confirm(`Delete this ${selectedType} level?`)) {
@@ -137,12 +143,16 @@ const ReferencesPage: React.FC = () => {
             return;
         }
         if (selectedType === 'Employee') {
-            // Would need updateEmployee
+            // Name editing here logic is handled by specific field change
             setEditingId(null);
             return;
         }
         updateHierarchyLevel(id, editingName);
         setEditingId(null);
+    };
+
+    const handleFieldChange = (id: string, field: string, value: string) => {
+        updateEmployee(id, { [field]: value });
     };
 
     const handleNameCancel = () => {
@@ -201,27 +211,46 @@ const ReferencesPage: React.FC = () => {
                             return (
                                 <tr key={item.id}>
                                     <td>
-                                        {editingId === item.id ? (
-                                            <input
-                                                type="text"
-                                                value={editingName}
-                                                onChange={(e) => setEditingName(e.target.value)}
-                                                onBlur={() => handleNameSave(item.id)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') handleNameSave(item.id);
-                                                    if (e.key === 'Escape') handleNameCancel();
-                                                }}
-                                                autoFocus
-                                                className="edit-name-input"
-                                            />
+                                        {selectedType === 'Employee' ? (
+                                            <div className="employee-name-cells">
+                                                <input
+                                                    type="text"
+                                                    value={(item as any).lastName}
+                                                    onChange={(e) => handleFieldChange(item.id, 'lastName', e.target.value)}
+                                                    className="field-edit-input"
+                                                    placeholder="Last Name"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={(item as any).firstName}
+                                                    onChange={(e) => handleFieldChange(item.id, 'firstName', e.target.value)}
+                                                    className="field-edit-input"
+                                                    placeholder="First Name"
+                                                />
+                                            </div>
                                         ) : (
-                                            <span
-                                                className="editable-name"
-                                                onClick={() => handleNameEdit(item.id, item.name)}
-                                                title="Click to edit"
-                                            >
-                                                {item.name}
-                                            </span>
+                                            editingId === item.id ? (
+                                                <input
+                                                    type="text"
+                                                    value={editingName}
+                                                    onChange={(e) => setEditingName(e.target.value)}
+                                                    onBlur={() => handleNameSave(item.id)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') handleNameSave(item.id);
+                                                        if (e.key === 'Escape') handleNameCancel();
+                                                    }}
+                                                    autoFocus
+                                                    className="edit-name-input"
+                                                />
+                                            ) : (
+                                                <span
+                                                    className="editable-name"
+                                                    onClick={() => handleNameEdit(item.id, item.name)}
+                                                    title="Click to edit"
+                                                >
+                                                    {item.name}
+                                                </span>
+                                            )
                                         )}
                                     </td>
                                     {selectedType === 'Employee' && (
@@ -284,13 +313,34 @@ const ReferencesPage: React.FC = () => {
 
                 {/* Show add button for all types including Employee */}
                 <div className="add-new-section">
-                    <input
-                        type="text"
-                        placeholder={selectedType === 'Employee' ? 'New employee name (LastName FirstName)...' : `New ${selectedType} name...`}
-                        value={newItemName}
-                        onChange={(e) => setNewItemName(e.target.value)}
-                        className="new-item-input"
-                    />
+                    <div className="add-inputs-group">
+                        <input
+                            type="text"
+                            placeholder={selectedType === 'Employee' ? 'Last Name' : `New ${selectedType} name...`}
+                            value={newItemName}
+                            onChange={(e) => setNewItemName(e.target.value)}
+                            className="new-item-input"
+                        />
+                        {selectedType === 'Employee' && (
+                            <>
+                                <input
+                                    type="text"
+                                    placeholder="First Name"
+                                    value={newItemFirstName}
+                                    onChange={(e) => setNewItemFirstName(e.target.value)}
+                                    className="new-item-input"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Initials"
+                                    value={newItemInitials}
+                                    onChange={(e) => setNewItemInitials(e.target.value.toUpperCase())}
+                                    className="initials-input"
+                                    maxLength={3}
+                                />
+                            </>
+                        )}
+                    </div>
                     {parentOptions.length > 0 && (
                         <select
                             value={newItemParent}
@@ -308,7 +358,7 @@ const ReferencesPage: React.FC = () => {
                     <button
                         className="add-btn"
                         onClick={handleAddNew}
-                        disabled={!newItemName.trim()}
+                        disabled={!newItemName.trim() || (selectedType === 'Employee' && !newItemFirstName.trim())}
                     >
                         <Plus size={20} /> Add New
                     </button>
@@ -509,6 +559,32 @@ const ReferencesPage: React.FC = () => {
                     color: var(--text-main);
                     width: 100%;
                     max-width: 200px;
+                }
+
+                .employee-name-cells {
+                    display: flex;
+                    gap: var(--space-sm);
+                }
+
+                .field-edit-input {
+                    padding: 6px 10px;
+                    border-radius: var(--radius);
+                    border: 1px solid var(--border);
+                    background: var(--surface-alt);
+                    color: var(--text-main);
+                    flex: 1;
+                    min-width: 120px;
+                }
+
+                .field-edit-input:focus {
+                    border-color: var(--primary);
+                    outline: none;
+                }
+
+                .add-inputs-group {
+                    display: flex;
+                    gap: var(--space-md);
+                    flex: 1;
                 }
             `}</style>
         </div>

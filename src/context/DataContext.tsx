@@ -106,8 +106,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const deleteEmployee = async (id: number) => {
-        // Not implemented in backend but would be DELETE /api/employees/:id
-        setEmployees(prev => prev.filter(e => String(e.id) !== String(id)));
+        try {
+            await fetch(`${API_BASE}/api/employees/${id}`, { method: 'DELETE' });
+            setEmployees(prev => prev.filter(e => e.id !== id));
+        } catch (error) {
+            console.error('Failed to delete employee:', error);
+        }
     };
 
     const getHierarchyPath = (levelId: string): HierarchyLevel[] => {

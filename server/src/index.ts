@@ -33,10 +33,23 @@ app.get('/api/data', async (req, res) => {
 
 app.post('/api/employees', async (req, res) => {
     try {
-        const employee = await prisma.employee.create({ data: req.body });
+        const { id, ...data } = req.body; // Ignore incoming ID if any
+        const employee = await prisma.employee.create({ data });
         res.json(employee);
     } catch (error) {
+        console.error('Failed to create employee:', error);
         res.status(500).json({ error: 'Failed to create employee' });
+    }
+});
+
+app.delete('/api/employees/:id', async (req, res) => {
+    try {
+        await prisma.employee.delete({
+            where: { id: Number(req.params.id) }
+        });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete employee' });
     }
 });
 
