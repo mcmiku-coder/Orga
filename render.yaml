@@ -5,7 +5,7 @@ services:
     plan: free
     region: oregon
     buildCommand: npm install && npm run build
-    startCommand: npm run prisma:db:push && npm run start
+    startCommand: npm run db:setup && npm run start
     envVars:
       - key: DATABASE_URL
         fromDatabase:

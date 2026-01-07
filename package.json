@@ -15,7 +15,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:db:push": "prisma db push"
+    "prisma:db:push": "prisma db push",
+    "prisma:seed": "prisma db seed",
+    "db:setup": "npm run prisma:db:push && npm run prisma:seed"
   },
   "dependencies": {
     "@prisma/client": "^6.19.1",
@@ -26,7 +28,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^6.30.2",
-    "prisma": "^6.19.1"
+    "prisma": "^6.19.1",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -41,7 +44,6 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "nodemon": "^3.1.11",
-    "ts-node": "^10.9.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^5.4.0"
