@@ -5,13 +5,16 @@ import { useData } from '../../context/DataContext';
 import Input from '../UI/Input';
 
 const SearchPage: React.FC = () => {
-  const { employees, hierarchy, getHierarchyPath } = useData();
+  const { employees, hierarchy, getHierarchyPath, updateEmployee } = useData();
   const [query, setQuery] = useState('');
   const [levelQuery, setLevelQuery] = useState('');
   const navigate = useNavigate();
 
-  const filteredEmployees = useMemo(() => {
+  // State for inline editing
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editField, setEditField] = useState<string | null>(null);
 
+  const filteredEmployees = useMemo(() => {
     // 1. Filter by Name/Initials
     let filtered = employees;
 
@@ -27,66 +30,146 @@ const SearchPage: React.FC = () => {
     // 2. Filter by Level Hierarchy
     if (levelQuery) {
       const lowerL = levelQuery.toLowerCase();
-
-      // Find all hierarchy nodes that match the query
       const matchedLevels = hierarchy.filter(h =>
         h.name.toLowerCase().includes(lowerL) ||
         h.id.toLowerCase().includes(lowerL)
       );
-
       const matchedLevelIds = new Set(matchedLevels.map(h => h.id));
-
-      // Find all valid L9 IDs that belong to these matched levels
       const validL9s = new Set<string>();
-
-      // Get all L9 nodes from hierarchy
       const allL9s = hierarchy.filter(h => h.level === 9);
 
       for (const l9 of allL9s) {
-        // If the L9 itself matches, add it
         if (matchedLevelIds.has(l9.id)) {
           validL9s.add(l9.id);
           continue;
         }
-
-        // Check ancestors
         const path = getHierarchyPath(l9.id);
         const hasAncestorMatch = path.some(node => matchedLevelIds.has(node.id));
-
         if (hasAncestorMatch) {
           validL9s.add(l9.id);
         }
       }
-
       filtered = filtered.filter(emp => validL9s.has(emp.level9));
     }
-
     return filtered;
   }, [query, levelQuery, employees, hierarchy, getHierarchyPath]);
+
+  const handleUpdate = (id: number | string, field: keyof typeof employees[0], value: string) => {
+    updateEmployee(String(id), { [field]: value });
+    setEditingId(null);
+    setEditField(null);
+  };
+
+  const startEdit = (e: React.MouseEvent, id: number | string, field: string) => {
+    e.stopPropagation(); // Prevent row click navigation
+    setEditingId(String(id));
+    setEditField(field);
+  };
+
+  const renderEditableCell = (emp: typeof employees[0], field: 'role' | 'level9' | 'status') => {
+    const isEditing = editingId === String(emp.id) && editField === field;
+
+    if (isEditing) {
+      if (field === 'role') {
+        return (
+          <select
+            className="inline-edit-input"
+            autoFocus
+            defaultValue={emp.role}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => handleUpdate(emp.id, field, e.target.value)}
+            onBlur={() => { setEditingId(null); setEditField(null); }}
+          >
+            <option value="Region Head">Region Head</option>
+            <option value="Team Head">Team Head</option>
+            <option value="Rel">Rel</option>
+            <option value="Assistant">Assistant</option>
+          </select>
+        );
+      }
+      if (field === 'status') {
+        return (
+          <select
+            className="inline-edit-input"
+            autoFocus
+            defaultValue={emp.status}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => handleUpdate(emp.id, field, e.target.value)}
+            onBlur={() => { setEditingId(null); setEditField(null); }}
+          >
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        );
+      }
+      // Level 9 Autocomplete
+      return (
+        <InlineLevel9Select
+          initialValue={emp.level9}
+          onSave={(newValue) => handleUpdate(emp.id, field, newValue)}
+          onCancel={() => { setEditingId(null); setEditField(null); }}
+          hierarchy={hierarchy}
+        />
+      );
+    }
+
+    // Render Read-Only View
+    if (field === 'role') {
+      return (
+        <span
+          className="role-badge"
+          onClick={(e) => startEdit(e, emp.id, field)}
+        >
+          {emp.role}
+        </span>
+      );
+    }
+    if (field === 'status') {
+      return (
+        <div
+          className={`status-dot ${emp.status.toLowerCase()}`}
+          onClick={(e) => startEdit(e, emp.id, field)}
+        ></div>
+      );
+    }
+    // Level 9
+    return (
+      <span onClick={(e) => startEdit(e, emp.id, field)} className="editable-text">
+        {emp.level9}
+      </span>
+    );
+  };
 
   return (
     <div className="search-page container">
       <div className="search-header glass-panel">
-        <h1>Search Employees</h1>
-        <p className="subtitle">Find anyone in the organization by name or initials.</p>
+        <h1>Search</h1>
 
-        <div className="search-bar-container">
-          <Input
-            placeholder="Type name or initials (e.g. MAM)..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-            className="search-input"
-          />
-          <SearchIcon className="search-icon-absolute" size={20} />
+        <div className="search-grid">
+          <div className="search-group">
+            <label>Employee Search</label>
+            <div className="input-wrapper">
+              <Input
+                placeholder="Type name or initials..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                autoFocus
+                className="search-input"
+              />
+              <SearchIcon className="search-icon-absolute" size={20} />
+            </div>
+          </div>
 
-          <div style={{ marginTop: '1rem' }}>
-            <Input
-              placeholder="Filter by Level (e.g. Paris, France, EMEA)..."
-              value={levelQuery}
-              onChange={(e) => setLevelQuery(e.target.value)}
-              className="level-input"
-            />
+          <div className="search-group">
+            <label>Level Search</label>
+            <div className="input-wrapper">
+              <Input
+                placeholder="Filter by Level..."
+                value={levelQuery}
+                onChange={(e) => setLevelQuery(e.target.value)}
+                className="search-input"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -114,11 +197,13 @@ const SearchPage: React.FC = () => {
               <strong>{emp.lastName}</strong> {emp.firstName}
             </div>
             <div className="col-role">
-              <span className="role-badge">{emp.role}</span>
+              {renderEditableCell(emp, 'role')}
             </div>
-            <div className="col-level">{emp.level9}</div>
+            <div className="col-level">
+              {renderEditableCell(emp, 'level9')}
+            </div>
             <div className="col-status">
-              <div className={`status-dot ${emp.status.toLowerCase()}`}></div>
+              {renderEditableCell(emp, 'status')}
             </div>
             <div className="col-arrow">→</div>
           </div>
@@ -142,20 +227,40 @@ const SearchPage: React.FC = () => {
           border-radius: var(--radius-lg);
           text-align: center;
         }
-        .subtitle {
-          color: var(--text-muted);
-          margin-bottom: var(--space-lg);
+        
+        .search-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-xl);
+            max-width: 900px;
+            margin: var(--space-lg) auto 0;
+            text-align: left;
         }
-        .search-bar-container {
-          max-width: 500px;
-          margin: 0 auto;
-          position: relative;
+
+        .search-group label {
+            display: block;
+            margin-bottom: var(--space-xs);
+            font-weight: 500;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
+
+        .input-wrapper {
+            position: relative;
+        }
+
         .search-input {
-          padding-left: 3rem !important;
+          padding-left: 1rem; 
           height: 3.5rem;
           font-size: 1.1rem;
         }
+        /* First input needs padding for icon */
+        .search-group:first-child .search-input {
+             padding-left: 3rem;
+        }
+
         .search-icon-absolute {
           position: absolute;
           left: 1rem;
@@ -223,19 +328,45 @@ const SearchPage: React.FC = () => {
           border: 1px solid var(--border);
           padding: 2px 8px;
           border-radius: 12px;
+          cursor: pointer;
         }
-        .item-row:hover .role-badge {
+        .role-badge:hover {
             border-color: var(--primary);
             color: var(--primary);
         }
         
         .status-dot {
-          width: 8px;
-          height: 8px;
+          width: 12px;
+          height: 12px;
           border-radius: 50%;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+        .status-dot:hover {
+            transform: scale(1.2);
         }
         .status-dot.active { background: var(--success); box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); }
         .status-dot.inactive { background: var(--text-light); }
+
+        .editable-text {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .editable-text:hover {
+            background: var(--surface-alt);
+            color: var(--primary);
+        }
+
+        .inline-edit-input {
+            width: 100%;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--primary);
+            background: var(--surface-alt);
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
         
         .no-results {
           text-align: center;
@@ -245,10 +376,115 @@ const SearchPage: React.FC = () => {
           background: var(--surface);
           border-radius: var(--radius);
         }
+
+        .inline-autocomplete-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .inline-suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 250px; /* Wider than input to show details */
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--surface);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            list-style: none;
+            padding: 0;
+            margin: 4px 0 0 0;
+        }
+        .inline-suggestions-list li {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+        .inline-suggestions-list li:last-child { border-bottom: none; }
+        .inline-suggestions-list li:hover {
+            background: var(--primary-light);
+            color: white;
+        }
       `}</style>
     </div>
   );
 };
 
+
+
+const InlineLevel9Select: React.FC<{
+  initialValue: string;
+  onSave: (val: string) => void;
+  onCancel: () => void;
+  hierarchy: any[];
+}> = ({ initialValue, onSave, onCancel, hierarchy }) => {
+  const [value, setValue] = useState(initialValue);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+
+  // Filter only Level 9 items
+  const l9Options = useMemo(() => hierarchy.filter(h => h.level === 9), [hierarchy]);
+
+  const suggestions = useMemo(() => {
+    if (!value) return l9Options;
+    const lower = value.toLowerCase();
+    return l9Options.filter(h =>
+      h.id.toLowerCase().includes(lower) ||
+      h.name.toLowerCase().includes(lower)
+    );
+  }, [value, l9Options]);
+
+  return (
+    <div className="inline-autocomplete-wrapper">
+      <input
+        className="inline-edit-input"
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            // If exact match exists or just save as is? User said "selection from L9".
+            // Let's try to find an exact match or first suggestion
+            if (suggestions.length > 0) {
+              onSave(suggestions[0].id);
+            } else {
+              // Fallback or prevent save? Let's prevent save if invalid?
+              // User said "must be a selection". 
+              // If exact match typed, use it.
+              const exact = l9Options.find(opt => opt.id === value || opt.name === value);
+              if (exact) onSave(exact.id);
+            }
+          }
+          if (e.key === 'Escape') onCancel();
+        }}
+        onBlur={() => {
+          // Check if valid
+          const exact = l9Options.find(opt => opt.id === value);
+          if (exact) onSave(exact.id);
+          else onCancel(); // Revert if invalid
+        }}
+        onClick={(e) => e.stopPropagation()}
+      />
+      {showSuggestions && suggestions.length > 0 && (
+        <ul className="inline-suggestions-list">
+          {suggestions.map(s => (
+            <li
+              key={s.id}
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevent blur
+                onSave(s.id);
+              }}
+            >
+              {s.id} <span style={{ opacity: 0.7, fontSize: '0.8em' }}>({s.name})</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 export default SearchPage;

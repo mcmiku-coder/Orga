@@ -11,21 +11,26 @@ interface DataContextType {
     deleteRelationship: (id: string) => void;
     updateRelationship: (rel: Relationship) => void;
     addEmployee: (emp: Employee) => void;
-    updateEmployee: (emp: Employee) => void;
+    updateEmployee: (id: string, updates: Partial<Employee>) => void;
     deleteEmployee: (id: number) => void;
+
+    // Hierarchy Management
+    updateHierarchyLevel: (levelId: string, newName: string) => void;
     getHierarchyPath: (levelId: string) => HierarchyLevel[];
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
     const [relationships, setRelationships] = useState<Relationship[]>([]);
+    const [hierarchy, setHierarchy] = useState<HierarchyLevel[]>(HIERARCHY_LEVELS);
 
     useEffect(() => {
         // Load from local storage or initialize
         const storedEmps = localStorage.getItem('ors_employees');
         const storedRels = localStorage.getItem('ors_relationships');
+        const storedHierarchy = localStorage.getItem('ors_hierarchy');
 
         if (storedEmps) {
             setEmployees(JSON.parse(storedEmps));
@@ -37,6 +42,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedRels) {
             setRelationships(JSON.parse(storedRels));
         }
+
+        if (storedHierarchy) {
+            const parsed = JSON.parse(storedHierarchy);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                setHierarchy(parsed);
+            } else {
+                // Fallback if stored is empty/invalid
+                setHierarchy(HIERARCHY_LEVELS);
+                localStorage.setItem('ors_hierarchy', JSON.stringify(HIERARCHY_LEVELS));
+            }
+        } else {
+            setHierarchy(HIERARCHY_LEVELS);
+            localStorage.setItem('ors_hierarchy', JSON.stringify(HIERARCHY_LEVELS));
+        }
     }, []);
 
     const saveEmployees = (emps: Employee[]) => {
@@ -47,6 +66,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saveRelationships = (rels: Relationship[]) => {
         setRelationships(rels);
         localStorage.setItem('ors_relationships', JSON.stringify(rels));
+    };
+
+    const saveHierarchy = (levels: HierarchyLevel[]) => {
+        setHierarchy(levels);
+        localStorage.setItem('ors_hierarchy', JSON.stringify(levels));
     };
 
     const addRelationship = (rel: Relationship) => {
@@ -65,37 +89,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveEmployees([...employees, emp]);
     };
 
-    const updateEmployee = (emp: Employee) => {
-        saveEmployees(employees.map(e => e.id === emp.id ? emp : e));
+    const updateEmployee = (id: string, updates: Partial<Employee>) => {
+        saveEmployees(employees.map(e => String(e.id) === String(id) ? { ...e, ...updates } : e));
     };
 
     const deleteEmployee = (id: number) => {
-        saveEmployees(employees.filter(e => e.id !== id));
+        saveEmployees(employees.filter(e => String(e.id) !== String(id)));
     };
 
     const getHierarchyPath = (levelId: string): HierarchyLevel[] => {
         const path: HierarchyLevel[] = [];
-        let current = HIERARCHY_LEVELS.find(l => l.id === levelId);
+        let current = hierarchy.find(l => l.id === levelId);
         while (current) {
             path.push(current);
             if (!current.parentId) break;
-            current = HIERARCHY_LEVELS.find(l => l.id === current!.parentId);
+            current = hierarchy.find(l => l.id === current!.parentId);
         }
         return path.reverse();
+    };
+
+    const updateHierarchyLevel = (levelId: string, newName: string) => {
+        saveHierarchy(hierarchy.map(h => h.id === levelId ? { ...h, name: newName } : h));
     };
 
     return (
         <DataContext.Provider value={{
             employees,
             relationships,
-            hierarchy: HIERARCHY_LEVELS,
+            hierarchy,
             addRelationship,
             deleteRelationship,
             updateRelationship,
             addEmployee,
             updateEmployee,
             deleteEmployee,
-            getHierarchyPath
+            getHierarchyPath,
+            updateHierarchyLevel
         }}>
             {children}
         </DataContext.Provider>

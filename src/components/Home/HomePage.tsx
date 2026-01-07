@@ -11,15 +11,12 @@ const HomePage: React.FC = () => {
                 <div className="hero-content">
                     <h1>Employee<span className="text-primary">ORG</span></h1>
                     <p className="hero-subtitle">
-                        Advanced Organization Intelligence & Relationship Management System
+                        Advanced Organization & Relationship Management System
                     </p>
                     <p className="hero-desc">
                         Manage your organization's hierarchy, track employee relationships, and visualize connections efficiently.
                     </p>
 
-                    <button className="cta-btn" onClick={() => navigate('/search')}>
-                        Start Searching
-                    </button>
                 </div>
             </div>
 
