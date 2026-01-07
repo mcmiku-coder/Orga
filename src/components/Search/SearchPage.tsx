@@ -423,7 +423,6 @@ const InlineLevel9Select: React.FC<{
   hierarchy: any[];
 }> = ({ initialValue, onSave, onCancel, hierarchy }) => {
   const [value, setValue] = useState(initialValue);
-  const [showSuggestions, setShowSuggestions] = useState(true);
 
   // Filter only Level 9 items
   const l9Options = useMemo(() => hierarchy.filter(h => h.level === 9), [hierarchy]);
@@ -468,7 +467,7 @@ const InlineLevel9Select: React.FC<{
         }}
         onClick={(e) => e.stopPropagation()}
       />
-      {showSuggestions && suggestions.length > 0 && (
+      {suggestions.length > 0 && (
         <ul className="inline-suggestions-list">
           {suggestions.map(s => (
             <li
