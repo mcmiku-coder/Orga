@@ -334,7 +334,7 @@ const SearchPage: React.FC = () => {
         }
         
         .role-badge {
-          font-size: 0.85rem;
+          font-size: 0.95rem;
           background: var(--surface-alt);
           color: var(--text-light);
           border: 1px solid var(--border);
