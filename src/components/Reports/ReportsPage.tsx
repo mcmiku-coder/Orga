@@ -51,42 +51,42 @@ const ReportsPage: React.FC = () => {
     switch (reportType) {
       case 'all':
         return employees.map(e => ({
+          Initials: e.initials,
+          Role: e.role,
           ID: e.id,
           LastName: e.lastName,
           FirstName: e.firstName,
-          Initials: e.initials,
-          Role: e.role,
           Level9: e.level9,
           Status: e.status
         }));
       case 'by-status':
         // Assuming 'status' is a property on employee
         return employees.filter(e => e.status === selectedLevelValue).map(e => ({
+          Initials: e.initials,
+          Role: e.role,
           ID: e.id,
           LastName: e.lastName,
           FirstName: e.firstName,
-          Initials: e.initials,
-          Role: e.role,
           Level9: e.level9,
           Status: e.status
         }));
       case 'by-level':
         return getLevelMembers().map(e => ({
+          Initials: e.initials,
+          Role: e.role,
           ID: e.id,
           LastName: e.lastName,
           FirstName: e.firstName,
-          Initials: e.initials,
-          Role: e.role,
           Level9: e.level9,
           Status: e.status
         }));
       case 'TEAM_HEADS':
         return employees.filter(e => e.role === 'Team Head').map(e => ({
+          Initials: e.initials,
+          Role: e.role,
           ID: e.id,
           LastName: e.lastName,
           FirstName: e.firstName,
-          Initials: e.initials,
-          Role: e.role,
           Level9: e.level9,
           Status: e.status
         }));
@@ -282,8 +282,16 @@ const ReportsPage: React.FC = () => {
               <tbody>
                 {reportData.map((row, idx) => (
                   <tr key={idx}>
-                    {Object.values(row).map((val, vIdx) => (
-                      <td key={vIdx}>{val}</td>
+                    {Object.entries(row).map(([key, val], vIdx) => (
+                      <td key={vIdx}>
+                        {key === 'Initials' ? (
+                          <div className={`emp-avatar role-${(row as any).Role?.toLowerCase().replace(' ', '-')}`}>
+                            {val}
+                          </div>
+                        ) : (
+                          val
+                        )}
+                      </td>
                     ))}
                   </tr>
                 ))}
@@ -356,6 +364,32 @@ const ReportsPage: React.FC = () => {
         }
         .btn:disabled { background: var(--text-light); cursor: not-allowed; }
         .text-light { color: var(--text-light); }
+        
+        .emp-avatar {
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+          color: white;
+          border-radius: 50%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 0.9rem;
+          box-shadow: var(--shadow-sm);
+        }
+        .emp-avatar.role-region-head {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .emp-avatar.role-team-head {
+          background: linear-gradient(135deg, #f97316, #ea580c);
+        }
+        .emp-avatar.role-rel {
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        .emp-avatar.role-assistant {
+          background: linear-gradient(135deg, #10b981, #059669);
+        }
       `}</style>
     </div>
   );
