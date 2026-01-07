@@ -1,40 +1,39 @@
-
+```typescript
 import { type Employee, type HierarchyLevel } from '../types';
 
 export const HIERARCHY_LEVELS: HierarchyLevel[] = [
-    // L3
-    { id: 'L3-Global', name: 'Global Head', level: 3 },
-
-    // L4
-    { id: 'L4-EMEA', name: 'EMEA', parentId: 'L3-Global', level: 4 },
-
-    // L5
-    { id: 'L5-WestEurope', name: 'West Europe', parentId: 'L4-EMEA', level: 5 },
-
-    // L6
-    { id: 'L6-FraBeLux', name: 'FraBeLux', parentId: 'L5-WestEurope', level: 6 },
-    { id: 'L6-SouthEurope', name: 'South Europe', parentId: 'L5-WestEurope', level: 6 },
-    { id: 'L6-UK', name: 'UK & Ireland', parentId: 'L5-WestEurope', level: 6 },
-
-    // L7
-    { id: 'L7-FranceZone', name: 'France Zone', parentId: 'L6-FraBeLux', level: 7 },
-    { id: 'L7-BeneluxZone', name: 'Benelux Zone', parentId: 'L6-FraBeLux', level: 7 },
-    { id: 'L7-ItalyZone', name: 'Italy Zone', parentId: 'L6-SouthEurope', level: 7 },
-    { id: 'L7-UKZone', name: 'UK Zone', parentId: 'L6-UK', level: 7 },
-
-    // L8
-    { id: 'L8-France', name: 'France Country', parentId: 'L7-FranceZone', level: 8 },
-    { id: 'L8-Belgique', name: 'Belgium Country', parentId: 'L7-BeneluxZone', level: 8 },
-    { id: 'L8-Luxembourg', name: 'Luxembourg Country', parentId: 'L7-BeneluxZone', level: 8 },
-    { id: 'L8-Italy', name: 'Italy Country', parentId: 'L7-ItalyZone', level: 8 },
-    { id: 'L8-UK', name: 'UK Country', parentId: 'L7-UKZone', level: 8 },
-
-    // L9 (Units)
-    { id: 'L9-Paris', name: 'Paris Unit', parentId: 'L8-France', level: 9 },
-    { id: 'L9-Bruxelles', name: 'Brussels Unit', parentId: 'L8-Belgique', level: 9 },
-    { id: 'L9-Luxembourg', name: 'Luxembourg Unit', parentId: 'L8-Luxembourg', level: 9 },
-    { id: 'L9-Milan', name: 'Milan Unit', parentId: 'L8-Italy', level: 9 },
-    { id: 'L9-London', name: 'London Unit', parentId: 'L8-UK', level: 9 },
+    // Level 3 - Global
+    { id: 'L3-Global', name: 'L3 - Global', level: 3 },
+    
+    // Level 4 - Regions
+    { id: 'L4-EMEA', name: 'L4 - EMEA', level: 4, parentId: 'L3-Global' },
+    { id: 'L4-Americas', name: 'L4 - Americas', level: 4, parentId: 'L3-Global' },
+    
+    // Level 5 - Sub-regions
+    { id: 'L5-WesternEurope', name: 'L5 - Western Europe', level: 5, parentId: 'L4-EMEA' },
+    { id: 'L5-NorthAmerica', name: 'L5 - North America', level: 5, parentId: 'L4-Americas' },
+    
+    // Level 6 - Countries
+    { id: 'L6-France', name: 'L6 - France', level: 6, parentId: 'L5-WesternEurope' },
+    { id: 'L6-Germany', name: 'L6 - Germany', level: 6, parentId: 'L5-WesternEurope' },
+    { id: 'L6-USA', name: 'L6 - USA', level: 6, parentId: 'L5-NorthAmerica' },
+    
+    // Level 7 - Areas
+    { id: 'L7-IleDeFrance', name: 'L7 - Ile de France', level: 7, parentId: 'L6-France' },
+    { id: 'L7-Bavaria', name: 'L7 - Bavaria', level: 7, parentId: 'L6-Germany' },
+    { id: 'L7-California', name: 'L7 - California', level: 7, parentId: 'L6-USA' },
+    
+    // Level 8 - Divisions
+    { id: 'L8-ParisNorth', name: 'L8 - Paris North', level: 8, parentId: 'L7-IleDeFrance' },
+    { id: 'L8-ParisSouth', name: 'L8 - Paris South', level: 8, parentId: 'L7-IleDeFrance' },
+    { id: 'L8-Munich', name: 'L8 - Munich', level: 8, parentId: 'L7-Bavaria' },
+    { id: 'L8-SanFrancisco', name: 'L8 - San Francisco', level: 8, parentId: 'L7-California' },
+    
+    // Level 9 - Units
+    { id: 'L9-Paris', name: 'L9 - Paris', level: 9, parentId: 'L8-ParisNorth' },
+    { id: 'L9-Versailles', name: 'L9 - Versailles', level: 9, parentId: 'L8-ParisSouth' },
+    { id: 'L9-MunichCenter', name: 'L9 - Munich Center', level: 9, parentId: 'L8-Munich' },
+    { id: 'L9-SFDowntown', name: 'L9 - SF Downtown', level: 9, parentId: 'L8-SanFrancisco' },
 ];
 
 export const INITIAL_EMPLOYEES: Employee[] = [
