@@ -9,7 +9,7 @@ const HomePage: React.FC = () => {
         <div className="home-page container">
             <div className="hero-section glass-panel">
                 <div className="hero-content">
-                    <h1>Employee<span className="text-primary">ORG</span></h1>
+                    <h1>My<span className="text-primary">ORG</span></h1>
                     <p className="hero-subtitle">
                         Advanced Organization & Relationship Management System
                     </p>
@@ -23,7 +23,7 @@ const HomePage: React.FC = () => {
             <div className="features-grid">
                 <div className="feature-card glass-panel" onClick={() => navigate('/search')}>
                     <div className="icon-box"><Search size={32} /></div>
-                    <h3>Smart Search</h3>
+                    <h3>Search and Edit</h3>
                     <p>Find employees instantly by name, initials, or hierarchy level.</p>
                 </div>
                 <div className="feature-card glass-panel" onClick={() => navigate('/hierarchy')}>

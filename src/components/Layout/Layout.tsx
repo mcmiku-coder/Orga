@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Search, FileText, House, Users } from 'lucide-react';
+import { Search, FileText, House, Users, Database } from 'lucide-react';
 
 const Layout: React.FC = () => {
   return (
@@ -12,7 +12,7 @@ const Layout: React.FC = () => {
           <div className="logo-icon">
             <div className="logo-dot"></div>
           </div>
-          <span className="logo-text">Employee<span className="text-light">ORG</span></span>
+          <span className="logo-text">My<span className="text-light">ORG</span></span>
         </div>
 
         <ul className="nav-links">
@@ -32,6 +32,12 @@ const Layout: React.FC = () => {
             <NavLink to="/hierarchy" className={({ isActive }) => isActive ? 'active' : ''}>
               <Users size={20} />
               <span>Hierarchy</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/references" className={({ isActive }) => isActive ? 'active' : ''}>
+              <Database size={20} />
+              <span>References</span>
             </NavLink>
           </li>
           <li>

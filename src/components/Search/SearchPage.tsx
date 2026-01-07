@@ -191,7 +191,7 @@ const SearchPage: React.FC = () => {
             onClick={() => navigate(`/employee/${emp.id}`)}
           >
             <div className="col-avatar">
-              <div className="emp-avatar">{emp.initials}</div>
+              <div className={`emp-avatar role-${emp.role.toLowerCase().replace(' ', '-')}`}>{emp.initials}</div>
             </div>
             <div className="col-name">
               <strong>{emp.lastName}</strong> {emp.firstName}
@@ -311,6 +311,18 @@ const SearchPage: React.FC = () => {
           width: 40px;
           height: 40px;
           background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+        }
+        .emp-avatar.role-region-head {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .emp-avatar.role-team-head {
+          background: linear-gradient(135deg, #f97316, #ea580c);
+        }
+        .emp-avatar.role-rel {
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        .emp-avatar.role-assistant {
+          background: linear-gradient(135deg, #10b981, #059669);
           color: white;
           border-radius: 50%;
           display: flex;
@@ -322,7 +334,7 @@ const SearchPage: React.FC = () => {
         }
         
         .role-badge {
-          font-size: 0.75rem;
+          font-size: 0.85rem;
           background: var(--surface-alt);
           color: var(--text-light);
           border: 1px solid var(--border);

@@ -16,6 +16,9 @@ interface DataContextType {
 
     // Hierarchy Management
     updateHierarchyLevel: (levelId: string, newName: string) => void;
+    addHierarchyLevel: (level: HierarchyLevel) => void;
+    deleteHierarchyLevel: (id: string) => void;
+    updateHierarchyParent: (id: string, newParentId: string | undefined) => void;
     getHierarchyPath: (levelId: string) => HierarchyLevel[];
 }
 
@@ -112,6 +115,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveHierarchy(hierarchy.map(h => h.id === levelId ? { ...h, name: newName } : h));
     };
 
+    const addHierarchyLevel = (level: HierarchyLevel) => {
+        saveHierarchy([...hierarchy, level]);
+    };
+
+    const deleteHierarchyLevel = (id: string) => {
+        saveHierarchy(hierarchy.filter(h => h.id !== id));
+    };
+
+    const updateHierarchyParent = (id: string, newParentId: string | undefined) => {
+        saveHierarchy(hierarchy.map(h => h.id === id ? { ...h, parentId: newParentId } : h));
+    };
+
     return (
         <DataContext.Provider value={{
             employees,
@@ -124,7 +139,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             updateEmployee,
             deleteEmployee,
             getHierarchyPath,
-            updateHierarchyLevel
+            updateHierarchyLevel,
+            addHierarchyLevel,
+            deleteHierarchyLevel,
+            updateHierarchyParent
         }}>
             {children}
         </DataContext.Provider>

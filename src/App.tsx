@@ -5,6 +5,7 @@ import Layout from './components/Layout/Layout';
 import SearchPage from './components/Search/SearchPage';
 import ProfilePage from './components/Profile/ProfilePage';
 import ReportsPage from './components/Reports/ReportsPage';
+import ReferencesPage from './components/References/ReferencesPage';
 import HierarchyPage from './components/Hierarchy/HierarchyPage';
 
 import HomePage from './components/Home/HomePage';
@@ -23,6 +24,7 @@ function App() {
             <Route index element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="hierarchy" element={<HierarchyPage />} /> {/* Added HierarchyPage route */}
+            <Route path="references" element={<ReferencesPage />} />
             <Route path="employee/:id" element={<ProfilePage />} />
             <Route path="reports" element={<ReportsPage />} />
           </Route>
