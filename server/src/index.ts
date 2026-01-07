@@ -74,6 +74,18 @@ app.post('/api/relationships', async (req, res) => {
     }
 });
 
+app.put('/api/relationships/:id', async (req, res) => {
+    try {
+        const relationship = await prisma.relationship.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(relationship);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update relationship' });
+    }
+});
+
 app.delete('/api/relationships/:id', async (req, res) => {
     try {
         await prisma.relationship.delete({ where: { id: req.params.id } });

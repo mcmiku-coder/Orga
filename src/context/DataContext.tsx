@@ -73,8 +73,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const updateRelationship = async (rel: Relationship) => {
-        // Not implemented in backend yet, but would be PUT /api/relationships/:id
-        setRelationships(prev => prev.map(r => r.id === rel.id ? rel : r));
+        try {
+            const res = await fetch(`${API_BASE}/api/relationships/${rel.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rel)
+            });
+            const updatedRel = await res.json();
+            setRelationships(prev => prev.map(r => r.id === rel.id ? updatedRel : r));
+        } catch (error) {
+            console.error('Failed to update relationship:', error);
+        }
     };
 
     const addEmployee = async (emp: Employee) => {
