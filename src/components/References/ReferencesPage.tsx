@@ -6,7 +6,7 @@ import type { HierarchyLevel } from '../../types';
 type ReferenceType = 'Employee' | 'L3' | 'L4' | 'L5' | 'L6' | 'L7' | 'L8' | 'L9';
 
 const ReferencesPage: React.FC = () => {
-    const { hierarchy, employees, addHierarchyLevel, deleteHierarchyLevel, updateHierarchyParent } = useData();
+    const { hierarchy, employees, addHierarchyLevel, deleteHierarchyLevel, updateHierarchyParent, updateHierarchyLevel, addEmployee, updateEmployee } = useData();
     const [selectedType, setSelectedType] = useState<ReferenceType>('L9');
     const [newItemName, setNewItemName] = useState('');
     const [newItemParent, setNewItemParent] = useState<string>('');
@@ -21,9 +21,10 @@ const ReferencesPage: React.FC = () => {
 
     // Get parent level options
     const getParentOptions = (type: ReferenceType): HierarchyLevel[] => {
-        if (type === 'Employee' || type === 'L3') return [];
+        if (type === 'L3') return [];
+        if (type === 'Employee') return hierarchy.filter(h => h.level === 9);
         const levelNum = getLevelNumber(type);
-        if (levelNum === null) return hierarchy.filter(h => h.level === 9);
+        if (levelNum === null) return [];
         return hierarchy.filter(h => h.level === levelNum - 1);
     };
 
@@ -54,9 +55,25 @@ const ReferencesPage: React.FC = () => {
         if (!newItemName.trim()) return;
 
         if (selectedType === 'Employee') {
-            // For employees, we'd need to add via addEmployee function
-            // Skipping for now as it requires more fields
-            alert('Employee creation requires more fields. Use the profile page.');
+            // Create new employee with minimal required fields
+            const nameParts = newItemName.trim().split(' ');
+            const lastName = nameParts[0] || 'Unknown';
+            const firstName = nameParts.slice(1).join(' ') || 'Employee';
+            const initials = (lastName[0] + (firstName[0] || '')).toUpperCase();
+
+            const newEmployee = {
+                id: Date.now(),
+                lastName,
+                firstName,
+                initials,
+                role: 'Rel' as const,
+                level9: newItemParent || hierarchy.find(h => h.level === 9)?.id || '',
+                status: 'Active' as const
+            };
+
+            addEmployee(newEmployee);
+            setNewItemName('');
+            setNewItemParent('');
             return;
         }
 
@@ -88,7 +105,8 @@ const ReferencesPage: React.FC = () => {
 
     const handleParentChange = (id: string, newParentId: string) => {
         if (selectedType === 'Employee') {
-            // Would need updateEmployee
+            // Update employee's level9
+            updateEmployee(id, { level9: newParentId });
             return;
         }
         updateHierarchyParent(id, newParentId || undefined);
@@ -212,38 +230,37 @@ const ReferencesPage: React.FC = () => {
                     </tbody>
                 </table>
 
-                {selectedType !== 'Employee' && (
-                    <div className="add-new-section">
-                        <input
-                            type="text"
-                            placeholder={`New ${selectedType} name...`}
-                            value={newItemName}
-                            onChange={(e) => setNewItemName(e.target.value)}
-                            className="new-item-input"
-                        />
-                        {parentOptions.length > 0 && (
-                            <select
-                                value={newItemParent}
-                                onChange={(e) => setNewItemParent(e.target.value)}
-                                className="new-item-parent"
-                            >
-                                <option value="">-- Select Parent --</option>
-                                {parentOptions.map(opt => (
-                                    <option key={opt.id} value={opt.id}>
-                                        {opt.name}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-                        <button
-                            className="add-btn"
-                            onClick={handleAddNew}
-                            disabled={!newItemName.trim()}
+                {/* Show add button for all types including Employee */}
+                <div className="add-new-section">
+                    <input
+                        type="text"
+                        placeholder={selectedType === 'Employee' ? 'New employee name (LastName FirstName)...' : `New ${selectedType} name...`}
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        className="new-item-input"
+                    />
+                    {parentOptions.length > 0 && (
+                        <select
+                            value={newItemParent}
+                            onChange={(e) => setNewItemParent(e.target.value)}
+                            className="new-item-parent"
                         >
-                            <Plus size={20} /> Add New
-                        </button>
-                    </div>
-                )}
+                            <option value="">-- Select Parent --</option>
+                            {parentOptions.map(opt => (
+                                <option key={opt.id} value={opt.id}>
+                                    {opt.name}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                    <button
+                        className="add-btn"
+                        onClick={handleAddNew}
+                        disabled={!newItemName.trim()}
+                    >
+                        <Plus size={20} /> Add New
+                    </button>
+                </div>
             </div>
 
             <style>{`
