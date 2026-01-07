@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { type Employee, type Relationship, type HierarchyLevel } from '../types';
-import { INITIAL_EMPLOYEES, HIERARCHY_LEVELS } from '../data/mockData';
+
 
 interface DataContextType {
     employees: Employee[];
@@ -24,80 +24,90 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+const API_BASE = ''; // Same origin
+
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
+    const [employees, setEmployees] = useState<Employee[]>([]);
     const [relationships, setRelationships] = useState<Relationship[]>([]);
-    const [hierarchy, setHierarchy] = useState<HierarchyLevel[]>(HIERARCHY_LEVELS);
+    const [hierarchy, setHierarchy] = useState<HierarchyLevel[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Load from local storage or initialize
-        const storedEmps = localStorage.getItem('ors_employees');
-        const storedRels = localStorage.getItem('ors_relationships');
-        const storedHierarchy = localStorage.getItem('ors_hierarchy');
-
-        if (storedEmps) {
-            setEmployees(JSON.parse(storedEmps));
-        } else {
-            setEmployees(INITIAL_EMPLOYEES);
-            localStorage.setItem('ors_employees', JSON.stringify(INITIAL_EMPLOYEES));
-        }
-
-        if (storedRels) {
-            setRelationships(JSON.parse(storedRels));
-        }
-
-        if (storedHierarchy) {
-            const parsed = JSON.parse(storedHierarchy);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                setHierarchy(parsed);
-            } else {
-                // Fallback if stored is empty/invalid
-                setHierarchy(HIERARCHY_LEVELS);
-                localStorage.setItem('ors_hierarchy', JSON.stringify(HIERARCHY_LEVELS));
+        const fetchData = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/data`);
+                const data = await res.json();
+                setEmployees(data.employees || []);
+                setRelationships(data.relationships || []);
+                setHierarchy(data.hierarchy || []);
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            } finally {
+                setLoading(false);
             }
-        } else {
-            setHierarchy(HIERARCHY_LEVELS);
-            localStorage.setItem('ors_hierarchy', JSON.stringify(HIERARCHY_LEVELS));
-        }
+        };
+        fetchData();
     }, []);
 
-    const saveEmployees = (emps: Employee[]) => {
-        setEmployees(emps);
-        localStorage.setItem('ors_employees', JSON.stringify(emps));
+    const addRelationship = async (rel: Relationship) => {
+        try {
+            const res = await fetch(`${API_BASE}/api/relationships`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rel)
+            });
+            const newRel = await res.json();
+            setRelationships(prev => [...prev, newRel]);
+        } catch (error) {
+            console.error('Failed to add relationship:', error);
+        }
     };
 
-    const saveRelationships = (rels: Relationship[]) => {
-        setRelationships(rels);
-        localStorage.setItem('ors_relationships', JSON.stringify(rels));
+    const deleteRelationship = async (id: string) => {
+        try {
+            await fetch(`${API_BASE}/api/relationships/${id}`, { method: 'DELETE' });
+            setRelationships(prev => prev.filter(r => r.id !== id));
+        } catch (error) {
+            console.error('Failed to delete relationship:', error);
+        }
     };
 
-    const saveHierarchy = (levels: HierarchyLevel[]) => {
-        setHierarchy(levels);
-        localStorage.setItem('ors_hierarchy', JSON.stringify(levels));
+    const updateRelationship = async (rel: Relationship) => {
+        // Not implemented in backend yet, but would be PUT /api/relationships/:id
+        setRelationships(prev => prev.map(r => r.id === rel.id ? rel : r));
     };
 
-    const addRelationship = (rel: Relationship) => {
-        saveRelationships([...relationships, rel]);
+    const addEmployee = async (emp: Employee) => {
+        try {
+            const res = await fetch(`${API_BASE}/api/employees`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(emp)
+            });
+            const newEmp = await res.json();
+            setEmployees(prev => [...prev, newEmp]);
+        } catch (error) {
+            console.error('Failed to add employee:', error);
+        }
     };
 
-    const deleteRelationship = (id: string) => {
-        saveRelationships(relationships.filter(r => r.id !== id));
+    const updateEmployee = async (id: string, updates: Partial<Employee>) => {
+        try {
+            const res = await fetch(`${API_BASE}/api/employees/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            const updatedEmp = await res.json();
+            setEmployees(prev => prev.map(e => String(e.id) === String(id) ? updatedEmp : e));
+        } catch (error) {
+            console.error('Failed to update employee:', error);
+        }
     };
 
-    const updateRelationship = (rel: Relationship) => {
-        saveRelationships(relationships.map(r => r.id === rel.id ? rel : r));
-    };
-
-    const addEmployee = (emp: Employee) => {
-        saveEmployees([...employees, emp]);
-    };
-
-    const updateEmployee = (id: string, updates: Partial<Employee>) => {
-        saveEmployees(employees.map(e => String(e.id) === String(id) ? { ...e, ...updates } : e));
-    };
-
-    const deleteEmployee = (id: number) => {
-        saveEmployees(employees.filter(e => String(e.id) !== String(id)));
+    const deleteEmployee = async (id: number) => {
+        // Not implemented in backend but would be DELETE /api/employees/:id
+        setEmployees(prev => prev.filter(e => String(e.id) !== String(id)));
     };
 
     const getHierarchyPath = (levelId: string): HierarchyLevel[] => {
@@ -111,21 +121,44 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return path.reverse();
     };
 
-    const updateHierarchyLevel = (levelId: string, newName: string) => {
-        saveHierarchy(hierarchy.map(h => h.id === levelId ? { ...h, name: newName } : h));
+    const updateHierarchyLevel = async (levelId: string, newName: string) => {
+        try {
+            const res = await fetch(`${API_BASE}/api/hierarchy/${levelId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            });
+            const updatedLevel = await res.json();
+            setHierarchy(prev => prev.map(h => h.id === levelId ? updatedLevel : h));
+        } catch (error) {
+            console.error('Failed to update hierarchy:', error);
+        }
     };
 
-    const addHierarchyLevel = (level: HierarchyLevel) => {
-        saveHierarchy([...hierarchy, level]);
+    const addHierarchyLevel = async (level: HierarchyLevel) => {
+        // Mocked as single update in backend for now
+        setHierarchy(prev => [...prev, level]);
     };
 
-    const deleteHierarchyLevel = (id: string) => {
-        saveHierarchy(hierarchy.filter(h => h.id !== id));
+    const deleteHierarchyLevel = async (id: string) => {
+        setHierarchy(prev => prev.filter(h => h.id !== id));
     };
 
-    const updateHierarchyParent = (id: string, newParentId: string | undefined) => {
-        saveHierarchy(hierarchy.map(h => h.id === id ? { ...h, parentId: newParentId } : h));
+    const updateHierarchyParent = async (id: string, newParentId: string | undefined) => {
+        try {
+            const res = await fetch(`${API_BASE}/api/hierarchy/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parentId: newParentId })
+            });
+            const updatedLevel = await res.json();
+            setHierarchy(prev => prev.map(h => h.id === id ? updatedLevel : h));
+        } catch (error) {
+            console.error('Failed to update hierarchy parent:', error);
+        }
     };
+
+    if (loading) return <div className="loading-overlay">Connecting to database...</div>;
 
     return (
         <DataContext.Provider value={{

@@ -123,11 +123,19 @@ h3 {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--text-light);
-  border-radius: var(--radius-full);
-}
-
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-alt);
+  color: var(--primary);
+  font-size: 1.25rem;
+  font-weight: 500;
+  z-index: 9999;
 }
