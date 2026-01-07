@@ -2,15 +2,15 @@
 import React, { type InputHTMLAttributes } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
+  label?: string;
 }
 
 const Input: React.FC<InputProps> = ({ label, className = '', ...props }) => {
-    return (
-        <div className="input-field">
-            {label && <label className="label">{label}</label>}
-            <input className={`input ${className}`} {...props} />
-            <style>{`
+  return (
+    <div className="input-field">
+      {label && <label className="label">{label}</label>}
+      <input className={`input ${className}`} {...props} />
+      <style>{`
         .input-field {
           display: flex;
           flex-direction: column;
@@ -23,21 +23,25 @@ const Input: React.FC<InputProps> = ({ label, className = '', ...props }) => {
           color: var(--secondary);
         }
         .input {
-          padding: 0.625rem var(--space-md);
+          padding: 0.75rem var(--space-md);
           border: 1px solid var(--border);
           border-radius: var(--radius);
-          font-size: 0.95rem;
+          font-size: 1rem;
           transition: all 0.2s;
           outline: none;
-          background: white;
+          background: var(--surface);
+          color: var(--text-main);
         }
         .input:focus {
           border-color: var(--primary);
           box-shadow: 0 0 0 3px var(--primary-light);
         }
+        .input::placeholder {
+          color: var(--text-light);
+        }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default Input;

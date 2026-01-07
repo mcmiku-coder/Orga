@@ -1,10 +1,12 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { DataProvider } from './context/DataContext';
 import Layout from './components/Layout/Layout';
 import SearchPage from './components/Search/SearchPage';
 import ProfilePage from './components/Profile/ProfilePage';
 import ReportsPage from './components/Reports/ReportsPage';
+
+import HomePage from './components/Home/HomePage';
 
 // Placeholder components until we build them
 // const SearchPage = () => <div className="p-4">Search Component</div>;
@@ -17,7 +19,7 @@ function App() {
       <DataProvider>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/search" replace />} />
+            <Route index element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="employee/:id" element={<ProfilePage />} />
             <Route path="reports" element={<ReportsPage />} />

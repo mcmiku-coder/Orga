@@ -1,59 +1,65 @@
 
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Search, FileText, Menu } from 'lucide-react';
+import { Search, FileText, Menu, House } from 'lucide-react';
 
 const Layout: React.FC = () => {
-    return (
-        <div className="layout">
-            {/* Sidebar / Navigation */}
-            <nav className="sidebar glass-panel">
-                <div className="logo-area">
-                    <div className="logo-icon">
-                        <div className="logo-dot"></div>
-                    </div>
-                    <span className="logo-text">Employee<span className="text-light">ORG</span></span>
-                </div>
+  return (
+    <div className="layout">
+      {/* Sidebar / Navigation */}
+      <nav className="sidebar glass-panel">
+        <div className="logo-area">
+          <div className="logo-icon">
+            <div className="logo-dot"></div>
+          </div>
+          <span className="logo-text">Employee<span className="text-light">ORG</span></span>
+        </div>
 
-                <ul className="nav-links">
-                    <li>
-                        <NavLink to="/search" className={({ isActive }) => isActive ? 'active' : ''}>
-                            <Search size={20} />
-                            <span>Search</span>
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="/reports" className={({ isActive }) => isActive ? 'active' : ''}>
-                            <FileText size={20} />
-                            <span>Reports</span>
-                        </NavLink>
-                    </li>
-                </ul>
+        <ul className="nav-links">
+          <li>
+            <NavLink to="/" className={({ isActive }) => isActive ? 'active' : ''} end>
+              <House size={20} />
+              <span>Home</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/search" className={({ isActive }) => isActive ? 'active' : ''}>
+              <Search size={20} />
+              <span>Search</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/reports" className={({ isActive }) => isActive ? 'active' : ''}>
+              <FileText size={20} />
+              <span>Reports</span>
+            </NavLink>
+          </li>
+        </ul>
 
-                <div className="user-area">
-                    <div className="avatar">AD</div>
-                    <div className="user-info">
-                        <span className="name">Admin User</span>
-                        <span className="role">System Admin</span>
-                    </div>
-                </div>
-            </nav>
+        <div className="user-area">
+          <div className="avatar">AD</div>
+          <div className="user-info">
+            <span className="name">Admin User</span>
+            <span className="role">System Admin</span>
+          </div>
+        </div>
+      </nav>
 
-            {/* Main Content Area */}
-            <main className="main-content">
-                <header className="top-bar glass-panel">
-                    <h2 className="page-title">Dashboard</h2>
-                    <div className="actions">
-                        <button className="icon-btn"><Menu size={20} /></button>
-                    </div>
-                </header>
+      {/* Main Content Area */}
+      <main className="main-content">
+        <header className="top-bar glass-panel">
+          <h2 className="page-title">Dashboard</h2>
+          <div className="actions">
+            <button className="icon-btn"><Menu size={20} /></button>
+          </div>
+        </header>
 
-                <div className="content-scroll">
-                    <Outlet />
-                </div>
-            </main>
+        <div className="content-scroll">
+          <Outlet />
+        </div>
+      </main>
 
-            <style>{`
+      <style>{`
         .layout {
           display: flex;
           height: 100vh;
@@ -224,8 +230,8 @@ const Layout: React.FC = () => {
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default Layout;
