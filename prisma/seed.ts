@@ -33,24 +33,30 @@ const INITIAL_EMPLOYEES = [
 ];
 
 async function main() {
-    console.log('Start seeding...');
+    console.log('Verifying database state...');
 
-    // Non-destructive check for Hierarchy
-    for (const h of HIERARCHY_LEVELS) {
-        const exists = await prisma.hierarchyLevel.findUnique({ where: { id: h.id } });
-        if (!exists) {
-            await prisma.hierarchyLevel.create({ data: h });
-            console.log(`Created hierarchy level: ${h.name}`);
-        }
+    const [hCount, eCount] = await Promise.all([
+        prisma.hierarchyLevel.count(),
+        prisma.employee.count()
+    ]);
+
+    if (hCount > 0 || eCount > 0) {
+        console.log(`Database already contains data (${hCount} levels, ${eCount} employees). Skipping seeding to preserve your changes.`);
+        return;
     }
 
-    // Non-destructive check for Employees
+    console.log('Database is empty. Starting initial seed...');
+
+    // Hierarchy
+    for (const h of HIERARCHY_LEVELS) {
+        await prisma.hierarchyLevel.create({ data: h });
+        console.log(`Created hierarchy level: ${h.name}`);
+    }
+
+    // Employees
     for (const e of INITIAL_EMPLOYEES) {
-        const exists = await prisma.employee.findUnique({ where: { initials: e.initials } });
-        if (!exists) {
-            await prisma.employee.create({ data: e });
-            console.log(`Created initial employee: ${e.lastName} (${e.initials})`);
-        }
+        await prisma.employee.create({ data: e });
+        console.log(`Created initial employee: ${e.lastName} (${e.initials})`);
     }
 
     console.log('Seeding finished.');
