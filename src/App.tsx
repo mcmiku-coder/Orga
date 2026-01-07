@@ -6,7 +6,7 @@ import SearchPage from './components/Search/SearchPage';
 import ProfilePage from './components/Profile/ProfilePage';
 import ReportsPage from './components/Reports/ReportsPage';
 import ReferencesPage from './components/References/ReferencesPage';
-import HierarchyPage from './components/Hierarchy/HierarchyPage';
+import HierarchyGraphPage from './components/Hierarchy/HierarchyGraphPage';
 
 import HomePage from './components/Home/HomePage';
 
@@ -23,7 +23,7 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
-            <Route path="hierarchy" element={<HierarchyPage />} /> {/* Added HierarchyPage route */}
+            <Route path="hierarchy" element={<HierarchyGraphPage />} />
             <Route path="references" element={<ReferencesPage />} />
             <Route path="employee/:id" element={<ProfilePage />} />
             <Route path="reports" element={<ReportsPage />} />
