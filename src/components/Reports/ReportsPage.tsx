@@ -6,12 +6,17 @@ import { useData } from '../../context/DataContext';
 import Select from '../UI/Select';
 import Card from '../UI/Card';
 
-type ReportType = 'TEAM_HEADS' | 'REGION_HEADS' | 'RELS_BY_L9' | 'ASSISTANTS' | 'ALL_RELATIONSHIPS';
+type ReportType = 'all' | 'by-status' | 'by-level' | 'TEAM_HEADS' | 'REGION_HEADS' | 'RELS_BY_L9' | 'ASSISTANTS' | 'ALL_RELATIONSHIPS';
 
 const ReportsPage: React.FC = () => {
   const { employees, relationships, hierarchy, getHierarchyPath } = useData();
-  const [reportType, setReportType] = useState<ReportType>('TEAM_HEADS');
+  const [reportType, setReportType] = useState<ReportType>('all');
   const [selectedL9, setSelectedL9] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
+  const [selectedLevelValue, setSelectedLevelValue] = useState<string>('');
+
+  // Role order for sorting
+  const roleOrder = { 'Region Head': 1, 'Team Head': 2, 'Rel': 3, 'Assistant': 4 };
 
   // Get all Level 9s for the dropdown
   const level9Options = useMemo(() => {
@@ -27,8 +32,54 @@ const ReportsPage: React.FC = () => {
     return l6 ? l6.name : '-';
   };
 
+  // Get employees for selected level value
+  const getLevelMembers = () => {
+    if (!selectedLevelValue) return [];
+
+    // Find all employees whose hierarchy path includes this level
+    return employees.filter(emp => {
+      const path = getHierarchyPath(emp.level9);
+      return path.some(h => h.id === selectedLevelValue);
+    }).sort((a, b) => {
+      const orderA = roleOrder[a.role as keyof typeof roleOrder] || 999;
+      const orderB = roleOrder[b.role as keyof typeof roleOrder] || 999;
+      return orderA - orderB;
+    });
+  };
+
   const reportData = useMemo(() => {
     switch (reportType) {
+      case 'all':
+        return employees.map(e => ({
+          ID: e.id,
+          LastName: e.lastName,
+          FirstName: e.firstName,
+          Initials: e.initials,
+          Role: e.role,
+          Level9: e.level9,
+          Status: e.status
+        }));
+      case 'by-status':
+        // Assuming 'status' is a property on employee
+        return employees.filter(e => e.status === selectedLevelValue).map(e => ({
+          ID: e.id,
+          LastName: e.lastName,
+          FirstName: e.firstName,
+          Initials: e.initials,
+          Role: e.role,
+          Level9: e.level9,
+          Status: e.status
+        }));
+      case 'by-level':
+        return getLevelMembers().map(e => ({
+          ID: e.id,
+          LastName: e.lastName,
+          FirstName: e.firstName,
+          Initials: e.initials,
+          Role: e.role,
+          Level9: e.level9,
+          Status: e.status
+        }));
       case 'TEAM_HEADS':
         return employees.filter(e => e.role === 'Team Head').map(e => ({
           ID: e.id,
@@ -91,7 +142,7 @@ const ReportsPage: React.FC = () => {
       default:
         return [];
     }
-  }, [reportType, selectedL9, employees, relationships, hierarchy]);
+  }, [reportType, selectedL9, selectedLevel, selectedLevelValue, employees, relationships, hierarchy]);
 
   const columns = useMemo(() => {
     if (reportData.length === 0) return [];
@@ -114,6 +165,23 @@ const ReportsPage: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const levelOptions = useMemo(() => {
+    const levels = Array.from(new Set(hierarchy.map(h => h.level))).sort((a, b) => a - b);
+    return levels.map(level => ({ label: `Level ${level}`, value: String(level) }));
+  }, [hierarchy]);
+
+  const levelValueOptions = useMemo(() => {
+    if (selectedLevel === null) return [];
+    return hierarchy
+      .filter(h => h.level === selectedLevel)
+      .map(h => ({ label: h.name, value: h.id }));
+  }, [hierarchy, selectedLevel]);
+
+  const statusOptions = useMemo(() => {
+    const statuses = Array.from(new Set(employees.map(e => e.status))).filter(Boolean);
+    return statuses.map(status => ({ label: status, value: status }));
+  }, [employees]);
+
   return (
     <div className="reports-page container">
       <div className="reports-header glass-panel">
@@ -128,6 +196,9 @@ const ReportsPage: React.FC = () => {
         <div className="filters">
           <Select
             options={[
+              { label: 'All Employees', value: 'all' },
+              { label: 'Employees by Status', value: 'by-status' },
+              { label: 'Employees by Level', value: 'by-level' },
               { label: 'All Team Heads', value: 'TEAM_HEADS' },
               { label: 'All Region Heads (+ L6)', value: 'REGION_HEADS' },
               { label: 'All Assistants (+ L9/L6)', value: 'ASSISTANTS' },
@@ -135,9 +206,45 @@ const ReportsPage: React.FC = () => {
               { label: 'All Relationships', value: 'ALL_RELATIONSHIPS' },
             ]}
             value={reportType}
-            onChange={(e) => setReportType(e.target.value as ReportType)}
+            onChange={(e) => {
+              setReportType(e.target.value as ReportType);
+              setSelectedLevel(null);
+              setSelectedLevelValue('');
+              setSelectedL9('');
+            }}
             className="report-select"
           />
+
+          {reportType === 'by-level' && (
+            <>
+              <Select
+                options={[{ label: 'Select Level...', value: '' }, ...levelOptions]}
+                value={selectedLevel !== null ? String(selectedLevel) : ''}
+                onChange={(e) => {
+                  setSelectedLevel(e.target.value ? Number(e.target.value) : null);
+                  setSelectedLevelValue('');
+                }}
+                className="level-selector"
+              />
+              {selectedLevel !== null && (
+                <Select
+                  options={[{ label: 'Select Value...', value: '' }, ...levelValueOptions]}
+                  value={selectedLevelValue}
+                  onChange={(e) => setSelectedLevelValue(e.target.value)}
+                  className="value-selector"
+                />
+              )}
+            </>
+          )}
+
+          {reportType === 'by-status' && (
+            <Select
+              options={[{ label: 'Select Status...', value: '' }, ...statusOptions]}
+              value={selectedLevelValue} // Reusing selectedLevelValue for status
+              onChange={(e) => setSelectedLevelValue(e.target.value)}
+              className="value-selector"
+            />
+          )}
 
           {reportType === 'RELS_BY_L9' && (
             <Select
