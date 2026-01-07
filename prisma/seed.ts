@@ -35,22 +35,22 @@ const INITIAL_EMPLOYEES = [
 async function main() {
     console.log('Start seeding...');
 
-    // Upsert Hierarchy
+    // Non-destructive check for Hierarchy
     for (const h of HIERARCHY_LEVELS) {
-        await prisma.hierarchyLevel.upsert({
-            where: { id: h.id },
-            update: h,
-            create: h,
-        });
+        const exists = await prisma.hierarchyLevel.findUnique({ where: { id: h.id } });
+        if (!exists) {
+            await prisma.hierarchyLevel.create({ data: h });
+            console.log(`Created hierarchy level: ${h.name}`);
+        }
     }
 
-    // Upsert Employees
+    // Non-destructive check for Employees
     for (const e of INITIAL_EMPLOYEES) {
-        await prisma.employee.upsert({
-            where: { initials: e.initials },
-            update: e,
-            create: e,
-        });
+        const exists = await prisma.employee.findUnique({ where: { initials: e.initials } });
+        if (!exists) {
+            await prisma.employee.create({ data: e });
+            console.log(`Created initial employee: ${e.lastName} (${e.initials})`);
+        }
     }
 
     console.log('Seeding finished.');

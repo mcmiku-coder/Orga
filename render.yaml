@@ -5,7 +5,8 @@ services:
     plan: free
     region: oregon
     buildCommand: npm install && npm run build
-    startCommand: npm run db:setup && npm run start
+    releaseCommand: npm run db:setup
+    startCommand: npm run start
     envVars:
       - key: DATABASE_URL
         fromDatabase:
