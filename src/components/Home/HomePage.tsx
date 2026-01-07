@@ -26,10 +26,10 @@ const HomePage: React.FC = () => {
                     <h3>Smart Search</h3>
                     <p>Find employees instantly by name, initials, or hierarchy level.</p>
                 </div>
-                <div className="feature-card glass-panel" onClick={() => navigate('/search')}>
+                <div className="feature-card glass-panel" onClick={() => navigate('/hierarchy')}>
                     <div className="icon-box"><Users size={32} /></div>
-                    <h3>Relationship Mapping</h3>
-                    <p>Track formal and informal connections between employees.</p>
+                    <h3>Hierarchy Overview</h3>
+                    <p>View and manage the complete organizational structure from L9 to L3.</p>
                 </div>
                 <div className="feature-card glass-panel" onClick={() => navigate('/reports')}>
                     <div className="icon-box"><Activity size={32} /></div>
