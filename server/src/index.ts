@@ -95,6 +95,27 @@ app.put('/api/hierarchy/:id', async (req, res) => {
     }
 });
 
+app.post('/api/hierarchy', async (req, res) => {
+    try {
+        const level = await prisma.hierarchyLevel.create({ data: req.body });
+        res.json(level);
+    } catch (error) {
+        console.error('Failed to create hierarchy level:', error);
+        res.status(500).json({ error: 'Failed to create hierarchy level' });
+    }
+});
+
+app.delete('/api/hierarchy/:id', async (req, res) => {
+    try {
+        await prisma.hierarchyLevel.delete({
+            where: { id: req.params.id }
+        });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete hierarchy level' });
+    }
+});
+
 // Fallback to React app
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../../dist/index.html'));

@@ -140,12 +140,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const addHierarchyLevel = async (level: HierarchyLevel) => {
-        // Mocked as single update in backend for now
-        setHierarchy(prev => [...prev, level]);
+        try {
+            const res = await fetch(`${API_BASE}/api/hierarchy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(level)
+            });
+            const newLevel = await res.json();
+            setHierarchy(prev => [...prev, newLevel]);
+        } catch (error) {
+            console.error('Failed to add hierarchy level:', error);
+        }
     };
 
     const deleteHierarchyLevel = async (id: string) => {
-        setHierarchy(prev => prev.filter(h => h.id !== id));
+        try {
+            await fetch(`${API_BASE}/api/hierarchy/${id}`, { method: 'DELETE' });
+            setHierarchy(prev => prev.filter(h => h.id !== id));
+        } catch (error) {
+            console.error('Failed to delete hierarchy level:', error);
+        }
     };
 
     const updateHierarchyParent = async (id: string, newParentId: string | undefined) => {
