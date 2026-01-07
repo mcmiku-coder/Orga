@@ -25,7 +25,7 @@ const Layout: React.FC = () => {
           <li>
             <NavLink to="/search" className={({ isActive }) => isActive ? 'active' : ''}>
               <Search size={20} />
-              <span>Search</span>
+              <span>Linking</span>
             </NavLink>
           </li>
           <li>

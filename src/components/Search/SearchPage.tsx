@@ -7,15 +7,21 @@ import Input from '../UI/Input';
 const SearchPage: React.FC = () => {
   const { employees, hierarchy, getHierarchyPath, updateEmployee } = useData();
   const [query, setQuery] = useState('');
-  const [levelQuery, setLevelQuery] = useState('');
   const navigate = useNavigate();
+
+  // Get Level 6 for an employee
+  const getLevel6 = (level9Id: string) => {
+    const path = getHierarchyPath(level9Id);
+    const l6 = path.find(h => h.level === 6);
+    return l6 ? l6.name : '-';
+  };
 
   // State for inline editing
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editField, setEditField] = useState<string | null>(null);
 
   const filteredEmployees = useMemo(() => {
-    // 1. Filter by Name/Initials
+    // Filter by Name/Initials only
     let filtered = employees;
 
     if (query) {
@@ -27,32 +33,9 @@ const SearchPage: React.FC = () => {
       );
     }
 
-    // 2. Filter by Level Hierarchy
-    if (levelQuery) {
-      const lowerL = levelQuery.toLowerCase();
-      const matchedLevels = hierarchy.filter(h =>
-        h.name.toLowerCase().includes(lowerL) ||
-        h.id.toLowerCase().includes(lowerL)
-      );
-      const matchedLevelIds = new Set(matchedLevels.map(h => h.id));
-      const validL9s = new Set<string>();
-      const allL9s = hierarchy.filter(h => h.level === 9);
-
-      for (const l9 of allL9s) {
-        if (matchedLevelIds.has(l9.id)) {
-          validL9s.add(l9.id);
-          continue;
-        }
-        const path = getHierarchyPath(l9.id);
-        const hasAncestorMatch = path.some(node => matchedLevelIds.has(node.id));
-        if (hasAncestorMatch) {
-          validL9s.add(l9.id);
-        }
-      }
-      filtered = filtered.filter(emp => validL9s.has(emp.level9));
-    }
-    return filtered;
-  }, [query, levelQuery, employees, hierarchy, getHierarchyPath]);
+    // Sort by last name
+    return filtered.sort((a, b) => a.lastName.localeCompare(b.lastName));
+  }, [query, employees]);
 
   const handleUpdate = (id: number | string, field: keyof typeof employees[0], value: string) => {
     updateEmployee(String(id), { [field]: value });
@@ -143,7 +126,7 @@ const SearchPage: React.FC = () => {
   return (
     <div className="search-page container">
       <div className="search-header glass-panel">
-        <h1>Search</h1>
+        <h1>Linking</h1>
 
         <div className="search-grid">
           <div className="search-group">
@@ -159,18 +142,6 @@ const SearchPage: React.FC = () => {
               <SearchIcon className="search-icon-absolute" size={20} />
             </div>
           </div>
-
-          <div className="search-group">
-            <label>Level Search</label>
-            <div className="input-wrapper">
-              <Input
-                placeholder="Filter by Level..."
-                value={levelQuery}
-                onChange={(e) => setLevelQuery(e.target.value)}
-                className="search-input"
-              />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -179,6 +150,7 @@ const SearchPage: React.FC = () => {
           <div className="col-avatar"></div>
           <div className="col-name">Name</div>
           <div className="col-role">Role</div>
+          <div className="col-level">Level 6</div>
           <div className="col-level">Level 9</div>
           <div className="col-status">Status</div>
           <div className="col-arrow"></div>
@@ -200,6 +172,9 @@ const SearchPage: React.FC = () => {
               {renderEditableCell(emp, 'role')}
             </div>
             <div className="col-level">
+              <span className="level-badge">{getLevel6(emp.level9)}</span>
+            </div>
+            <div className="col-level">
               {renderEditableCell(emp, 'level9')}
             </div>
             <div className="col-status">
@@ -209,7 +184,7 @@ const SearchPage: React.FC = () => {
           </div>
         ))}
 
-        {((query || levelQuery) && filteredEmployees.length === 0) && (
+        {(query && filteredEmployees.length === 0) && (
           <div className="no-results">
             No employees found matching your criteria.
           </div>
@@ -230,9 +205,9 @@ const SearchPage: React.FC = () => {
         
         .search-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: var(--space-xl);
-            max-width: 900px;
+            max-width: 600px;
             margin: var(--space-lg) auto 0;
             text-align: left;
         }
@@ -277,7 +252,7 @@ const SearchPage: React.FC = () => {
 
         .item-row {
           display: grid;
-          grid-template-columns: 60px 2fr 1.5fr 1.5fr 80px 40px;
+          grid-template-columns: 60px 2fr 1.5fr 1.5fr 1.5fr 80px 40px;
           align-items: center;
           padding: 12px var(--space-md);
           background: var(--surface);
