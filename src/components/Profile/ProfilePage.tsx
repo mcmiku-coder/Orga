@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, MapPin, Plus, Trash2, Edit2, Save } from 'lucide-react';
+import { ArrowLeft, MapPin, Plus, Trash2, Edit2, Save } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { type Relationship, type Employee } from '../../types';
 import Card from '../UI/Card';
@@ -143,31 +143,19 @@ const ProfilePage: React.FC = () => {
             <div className="profile-header glass-panel">
                 <div className="header-content">
                     <div className={`profile-avatar role-${employee.role.toLowerCase().replace(' ', '-')}`}>{employee.initials}</div>
-                    <div>
+                    <div className="header-main">
                         <h1>{employee.lastName} {employee.firstName}</h1>
-                        <div className="badges">
-                            <span className="badge role">{employee.role}</span>
-                            <span className={`badge status ${employee.status.toLowerCase()}`}>{employee.status}</span>
+                        <div className="badges-container">
+                            <div className="badge-row">
+                                <span className="badge role">{employee.role}</span>
+                                <span className={`badge status ${employee.status.toLowerCase()}`}>{employee.status}</span>
+                                <span className="badge-outline-sm">ID: {employee.id}</span>
+                            </div>
+                            <div className="badge-row secondary">
+                                <span className="info-tag"><MapPin size={14} /> {getLevel6(employee.level9)}</span>
+                                <span className="info-tag"><MapPin size={14} /> {employee.level9}</span>
+                            </div>
                         </div>
-                    </div>
-                </div>
-
-                <div className="info-grid">
-                    <div className="info-item">
-                        <span className="label">ID</span>
-                        <span className="value">{employee.id}</span>
-                    </div>
-                    <div className="info-item">
-                        <span className="label">Level 6</span>
-                        <span className="value flex-center"><MapPin size={16} /> {getLevel6(employee.level9)}</span>
-                    </div>
-                    <div className="info-item">
-                        <span className="label">Level 9 Unit</span>
-                        <span className="value flex-center"><MapPin size={16} /> {employee.level9}</span>
-                    </div>
-                    <div className="info-item">
-                        <span className="label">Initials</span>
-                        <span className="value flex-center"><User size={16} /> {employee.initials}</span>
                     </div>
                 </div>
             </div>
@@ -187,9 +175,10 @@ const ProfilePage: React.FC = () => {
                         <table>
                             <thead>
                                 <tr>
+                                    <th>Owner</th>
                                     <th>Type</th>
                                     <th>Name</th>
-                                    <th>Initials</th>
+                                    <th className="text-center">Initials</th>
                                     <th>Level 9</th>
                                     <th>Dates</th>
                                     <th style={{ textAlign: 'right' }}>Actions</th>
@@ -198,30 +187,49 @@ const ProfilePage: React.FC = () => {
                             <tbody>
                                 {employeeRelationships.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="text-center text-muted p-4">No relationships recorded</td>
+                                        <td colSpan={7} className="text-center text-muted p-4">No relationships recorded</td>
                                     </tr>
                                 ) : (
-                                    employeeRelationships.map(rel => (
-                                        <tr key={rel.id}>
-                                            <td><span className="badge-outline">{rel.type}</span></td>
-                                            <td className="font-medium">{rel.targetLastName} {rel.targetFirstName}</td>
-                                            <td>{rel.targetInitials}</td>
-                                            <td>{rel.targetLevel9}</td>
-                                            <td className="text-sm text-muted">
-                                                {rel.startDate} {rel.endDate ? `— ${rel.endDate}` : '(Current)'}
-                                            </td>
-                                            <td style={{ textAlign: 'right' }}>
-                                                <div className="action-buttons">
-                                                    <button onClick={() => handleOpenModal(rel)} className="icon-btn-sm edit">
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    <button onClick={() => handleDelete(rel.id)} className="icon-btn-sm delete">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    employeeRelationships.map(rel => {
+                                        const targetEmp = employees.find(e => e.initials === rel.targetInitials);
+                                        const targetRoleClass = targetEmp ? `role-${targetEmp.role.toLowerCase().replace(' ', '-')}` : '';
+                                        const ownerRoleClass = `role-${employee.role.toLowerCase().replace(' ', '-')}`;
+
+                                        return (
+                                            <tr key={rel.id}>
+                                                <td className="text-center">
+                                                    <div className="flex-center">
+                                                        <div className={`emp-avatar-sm ${ownerRoleClass}`}>
+                                                            {employee.initials}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td><span className="badge-outline">{rel.type}</span></td>
+                                                <td className="font-medium">{rel.targetLastName} {rel.targetFirstName}</td>
+                                                <td className="text-center">
+                                                    <div className="flex-center">
+                                                        <div className={`emp-avatar-sm ${targetRoleClass}`}>
+                                                            {rel.targetInitials}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{rel.targetLevel9}</td>
+                                                <td className="text-sm text-muted">
+                                                    {rel.startDate} {rel.endDate ? `— ${rel.endDate}` : '(Current)'}
+                                                </td>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <div className="action-buttons">
+                                                        <button onClick={() => handleOpenModal(rel)} className="icon-btn-sm edit">
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button onClick={() => handleDelete(rel.id)} className="icon-btn-sm delete">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -341,18 +349,52 @@ const ProfilePage: React.FC = () => {
         .back-link:hover { color: var(--primary); }
 
         .profile-header {
-          padding: var(--space-xl);
-          margin-bottom: var(--space-xl);
+          padding: var(--space-lg) var(--space-xl);
+          margin-bottom: var(--space-md);
           border-radius: var(--radius-lg);
+          border: 1px solid var(--border);
         }
 
         .header-content {
           display: flex;
           align-items: center;
           gap: var(--space-xl);
-          margin-bottom: var(--space-xl);
-          border-bottom: 1px solid var(--border);
-          padding-bottom: var(--space-xl);
+          padding-bottom: var(--space-lg);
+        }
+        .header-main {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .badges-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .badge-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+        .badge-outline-sm {
+            padding: 2px 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-tag {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.05);
+            padding: 2px 10px;
+            border-radius: 100px;
         }
 
                 .profile-avatar {
@@ -395,18 +437,6 @@ const ProfilePage: React.FC = () => {
         .badge.active { background: #dcfce7; color: #166534; }
         .badge.inactive { background: #f1f5f9; color: #64748b; }
 
-        .info-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: var(--space-lg);
-        }
-        .info-item {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .info-item .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .info-item .value { font-weight: 600; font-size: 1.1rem; }
         .flex-center { display: flex; align-items: center; gap: 6px; }
 
         .section-header {
@@ -541,9 +571,27 @@ const ProfilePage: React.FC = () => {
             color: var(--primary);
         }
 
+        .emp-avatar-sm {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: var(--shadow-sm);
+        }
+        .emp-avatar-sm.role-region-head { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .emp-avatar-sm.role-team-head { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .emp-avatar-sm.role-rel { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .emp-avatar-sm.role-assistant { background: linear-gradient(135deg, #10b981, #059669); }
+
         .graph-section {
-          margin-top: var(--space-xl);
-          padding: var(--space-xl);
+          margin-top: var(--space-md);
+          padding: var(--space-md) var(--space-xl);
           background: var(--surface);
           border-radius: var(--radius-lg);
           box-shadow: var(--shadow-md);
@@ -551,7 +599,7 @@ const ProfilePage: React.FC = () => {
           flex-direction: column;
           align-items: center;
         }
-        .graph-section h2 { margin-bottom: var(--space-lg); align-self: flex-start; }
+        .graph-section h2 { margin-bottom: var(--space-sm); align-self: flex-start; }
         .relationship-canvas {
           background: var(--surface-alt);
           border-radius: var(--radius);
@@ -596,9 +644,11 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
             });
 
             if (rel.type === 'works for') {
-                links.push({ source: employee.initials, target: rel.targetInitials, type: 'arrow' });
-            } else if (rel.type === 'boss of') {
+                // target is the boss, employee is the worker
                 links.push({ source: rel.targetInitials, target: employee.initials, type: 'arrow' });
+            } else if (rel.type === 'boss of') {
+                // employee is the boss, target is the worker
+                links.push({ source: employee.initials, target: rel.targetInitials, type: 'arrow' });
             } else {
                 links.push({ source: employee.initials, target: rel.targetInitials, type: 'line' });
             }
@@ -620,10 +670,10 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
         const height = canvas.height;
         ctx.clearRect(0, 0, width, height);
 
-        const centerX = width / 2;
+        const startX = 100;
         const centerY = height / 2;
         const radius = 35;
-        const orbitRadius = 160;
+        const columnWidth = 220;
 
         const roleColors: Record<string, string[]> = {
             'Region Head': ['#ef4444', '#dc2626'],
@@ -634,17 +684,32 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
 
         const nodePositions = new Map<string, { x: number; y: number }>();
 
-        // Position central node
-        nodePositions.set(employee.initials, { x: centerX, y: centerY });
+        // Group nodes by their relative position
+        const managers = graphData.links.filter(l => l.target === employee.initials && l.type === 'arrow').map(l => l.source);
+        const subordinates = graphData.links.filter(l => l.source === employee.initials && l.type === 'arrow').map(l => l.target);
+        const colleagues = graphData.nodes.filter(n => !n.isCenter && !managers.includes(n.id) && !subordinates.includes(n.id)).map(n => n.id);
 
-        // Position others in orbit
-        const others = graphData.nodes.filter(n => !n.isCenter);
-        others.forEach((node, i) => {
-            const angle = (i / others.length) * 2 * Math.PI - Math.PI / 2;
-            nodePositions.set(node.id, {
-                x: centerX + orbitRadius * Math.cos(angle),
-                y: centerY + orbitRadius * Math.sin(angle)
-            });
+        // Determine horizontal positions
+        const managerX = startX;
+        const employeeX = managers.length > 0 ? startX + columnWidth : startX;
+        const rightSideX = employeeX + columnWidth;
+
+        // Position central node
+        nodePositions.set(employee.initials, { x: employeeX, y: centerY });
+
+        // Position Managers on the LEFT
+        managers.forEach((id, i) => {
+            const total = managers.length;
+            const y = centerY + (i - (total - 1) / 2) * 110;
+            nodePositions.set(id, { x: managerX, y });
+        });
+
+        // Position Subordinates/Colleagues on the RIGHT
+        const rightSideNodes = [...subordinates, ...colleagues];
+        rightSideNodes.forEach((id, i) => {
+            const total = rightSideNodes.length;
+            const y = centerY + (i - (total - 1) / 2) * 110;
+            nodePositions.set(id, { x: rightSideX, y });
         });
 
         // Draw links
@@ -717,7 +782,7 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
             ctx.fillText(node.id, pos.x, pos.y);
 
             // Name below
-            ctx.fillStyle = '#1e293b';
+            ctx.fillStyle = '#f1f5f9'; // Bright text for dark mode
             ctx.font = 'bold 12px Inter';
             ctx.fillText(node.name, pos.x, pos.y + radius + 18);
         });
@@ -730,7 +795,7 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
             <canvas
                 ref={canvasRef}
                 width={800}
-                height={450}
+                height={200}
                 className="relationship-canvas"
             />
         </div>

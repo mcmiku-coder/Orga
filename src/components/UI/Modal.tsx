@@ -3,37 +3,37 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    title: string;
-    children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
-    useEffect(() => {
-        const handleEsc = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        if (isOpen) window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
-    }, [isOpen, onClose]);
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-container glass-panel">
-                <div className="modal-header">
-                    <h2>{title}</h2>
-                    <button onClick={onClose} className="close-btn">
-                        <X size={20} />
-                    </button>
-                </div>
-                <div className="modal-content">
-                    {children}
-                </div>
-            </div>
-            <style>{`
+  return (
+    <div className="modal-overlay">
+      <div className="modal-container glass-panel">
+        <div className="modal-header">
+          <h2>{title}</h2>
+          <button onClick={onClose} className="close-btn">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="modal-content">
+          {children}
+        </div>
+      </div>
+      <style>{`
         .modal-overlay {
           position: fixed;
           top: 0;
@@ -53,9 +53,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
           max-width: 600px;
           max-height: 90vh;
           overflow-y: auto;
-          background: white;
+          background: var(--surface);
           padding: 0;
           animation: slideUp 0.3s ease;
+          border: 1px solid var(--border);
         }
         .modal-header {
           padding: var(--space-lg);
@@ -88,8 +89,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
           to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default Modal;
