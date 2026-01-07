@@ -20,9 +20,13 @@ const ReferencesPage: React.FC = () => {
     };
 
     // Get parent level options
-    const getParentOptions = (type: ReferenceType): HierarchyLevel[] => {
+    const getParentOptions = (type: ReferenceType, employeeRole?: string): HierarchyLevel[] => {
         if (type === 'L3') return [];
-        if (type === 'Employee') return hierarchy.filter(h => h.level === 9);
+        if (type === 'Employee') {
+            // Region Heads use Level 6, all others use Level 9
+            const targetLevel = employeeRole === 'Region Head' ? 6 : 9;
+            return hierarchy.filter(h => h.level === targetLevel);
+        }
         const levelNum = getLevelNumber(type);
         if (levelNum === null) return [];
         return hierarchy.filter(h => h.level === levelNum - 1);
@@ -34,6 +38,8 @@ const ReferencesPage: React.FC = () => {
             return employees.map(emp => ({
                 id: String(emp.id),
                 name: `${emp.lastName} ${emp.firstName}`,
+                initials: emp.initials,
+                role: emp.role,
                 parentId: emp.level9,
                 type: 'Employee' as const
             }));
@@ -112,6 +118,14 @@ const ReferencesPage: React.FC = () => {
         updateHierarchyParent(id, newParentId || undefined);
     };
 
+    const handleRoleChange = (id: string, newRole: string) => {
+        updateEmployee(id, { role: newRole as any });
+    };
+
+    const handleInitialsChange = (id: string, newInitials: string) => {
+        updateEmployee(id, { initials: newInitials });
+    };
+
     const handleNameEdit = (id: string, currentName: string) => {
         setEditingId(id);
         setEditingName(currentName);
@@ -167,66 +181,104 @@ const ReferencesPage: React.FC = () => {
                     <thead>
                         <tr>
                             <th>{selectedType} Name</th>
+                            {selectedType === 'Employee' && (
+                                <>
+                                    <th>Initials</th>
+                                    <th>Role</th>
+                                </>
+                            )}
                             <th>Parent Level</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {currentData.map(item => (
-                            <tr key={item.id}>
-                                <td>
-                                    {editingId === item.id ? (
-                                        <input
-                                            type="text"
-                                            value={editingName}
-                                            onChange={(e) => setEditingName(e.target.value)}
-                                            onBlur={() => handleNameSave(item.id)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') handleNameSave(item.id);
-                                                if (e.key === 'Escape') handleNameCancel();
-                                            }}
-                                            autoFocus
-                                            className="edit-name-input"
-                                        />
-                                    ) : (
-                                        <span
-                                            className="editable-name"
-                                            onClick={() => handleNameEdit(item.id, item.name)}
-                                            title="Click to edit"
-                                        >
-                                            {item.name}
-                                        </span>
+                        {currentData.map(item => {
+                            const itemRole = selectedType === 'Employee' ? (item as any).role : undefined;
+                            const dynamicParentOptions = selectedType === 'Employee'
+                                ? getParentOptions(selectedType, itemRole)
+                                : parentOptions;
+
+                            return (
+                                <tr key={item.id}>
+                                    <td>
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="text"
+                                                value={editingName}
+                                                onChange={(e) => setEditingName(e.target.value)}
+                                                onBlur={() => handleNameSave(item.id)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleNameSave(item.id);
+                                                    if (e.key === 'Escape') handleNameCancel();
+                                                }}
+                                                autoFocus
+                                                className="edit-name-input"
+                                            />
+                                        ) : (
+                                            <span
+                                                className="editable-name"
+                                                onClick={() => handleNameEdit(item.id, item.name)}
+                                                title="Click to edit"
+                                            >
+                                                {item.name}
+                                            </span>
+                                        )}
+                                    </td>
+                                    {selectedType === 'Employee' && (
+                                        <>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    value={(item as any).initials}
+                                                    onChange={(e) => handleInitialsChange(item.id, e.target.value.toUpperCase())}
+                                                    className="initials-input"
+                                                    maxLength={3}
+                                                />
+                                            </td>
+                                            <td>
+                                                <select
+                                                    value={(item as any).role}
+                                                    onChange={(e) => handleRoleChange(item.id, e.target.value)}
+                                                    className="role-selector"
+                                                >
+                                                    <option value="Region Head">Region Head</option>
+                                                    <option value="Team Head">Team Head</option>
+                                                    <option value="Rel">Rel</option>
+                                                    <option value="Assistant">Assistant</option>
+                                                </select>
+                                            </td>
+                                        </>
                                     )}
-                                </td>
-                                <td>
-                                    {parentOptions.length > 0 ? (
-                                        <select
-                                            value={item.parentId || ''}
-                                            onChange={(e) => handleParentChange(item.id, e.target.value)}
-                                            className="parent-selector"
+                                    <td>
+                                        {dynamicParentOptions.length > 0 ? (
+                                            <select
+                                                value={item.parentId || ''}
+                                                onChange={(e) => handleParentChange(item.id, e.target.value)}
+                                                className="parent-selector"
+                                            >
+                                                <option value="">-- None --</option>
+                                                {dynamicParentOptions.map(opt => (
+                                                    <option key={opt.id} value={opt.id}>
+                                                        {opt.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <span className="no-parent">Root Level</span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="delete-btn"
+                                            onClick={() => handleDelete(item.id)}
+                                            title="Delete"
                                         >
-                                            <option value="">-- None --</option>
-                                            {parentOptions.map(opt => (
-                                                <option key={opt.id} value={opt.id}>
-                                                    {opt.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <span className="no-parent">Root Level</span>
-                                    )}
-                                </td>
-                                <td>
-                                    <button
-                                        className="delete-btn"
-                                        onClick={() => handleDelete(item.id)}
-                                        title="Delete"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
 
@@ -436,6 +488,27 @@ const ReferencesPage: React.FC = () => {
                     color: var(--text-main);
                     width: 100%;
                     font-size: 1rem;
+                }
+
+                .initials-input {
+                    padding: 6px 10px;
+                    border-radius: var(--radius);
+                    border: 1px solid var(--border);
+                    background: var(--surface);
+                    color: var(--text-main);
+                    width: 80px;
+                    font-size: 1rem;
+                    text-transform: uppercase;
+                }
+
+                .role-selector {
+                    padding: 6px 10px;
+                    border-radius: var(--radius);
+                    border: 1px solid var(--border);
+                    background: var(--surface-alt);
+                    color: var(--text-main);
+                    width: 100%;
+                    max-width: 200px;
                 }
             `}</style>
         </div>
