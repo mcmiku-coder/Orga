@@ -135,7 +135,7 @@ const ProfilePage: React.FC = () => {
 
             <div className="profile-header glass-panel">
                 <div className="header-content">
-                    <div className="avatar-large">{employee.initials}</div>
+                    <div className={`profile-avatar role-${employee.role.toLowerCase().replace(' ', '-')}`}>{employee.initials}</div>
                     <div>
                         <h1>{employee.lastName} {employee.firstName}</h1>
                         <div className="badges">
@@ -342,24 +342,35 @@ const ProfilePage: React.FC = () => {
           padding-bottom: var(--space-xl);
         }
 
-        .avatar-large {
-          width: 80px;
-          height: 80px;
-          background: linear-gradient(135deg, var(--primary), var(--primary-light));
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 2rem;
-          font-weight: 700;
-          color: white;
-          box-shadow: var(--shadow);
+                .profile-avatar {
+                    width: 100px;
+                    height: 100px;
+                    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+                    color: white;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 2rem;
+                    font-weight: 700;
+                    box-shadow: var(--shadow-lg);
+                }
+                .profile-avatar.role-region-head {
+                    background: linear-gradient(135deg, #ef4444, #dc2626);
+                }
+                .profile-avatar.role-team-head {
+                    background: linear-gradient(135deg, #f97316, #ea580c);
+                }
+                .profile-avatar.role-rel {
+                    background: linear-gradient(135deg, #3b82f6, #2563eb);
+                }
+                .profile-avatar.role-assistant {
+                    background: linear-gradient(135deg, #10b981, #059669);
         }
 
         .badges {
           display: flex;
           gap: var(--space-sm);
-          margin-top: var(--space-xs);
         }
         .badge {
           padding: 4px 12px;

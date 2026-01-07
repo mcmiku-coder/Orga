@@ -311,6 +311,14 @@ const SearchPage: React.FC = () => {
           width: 40px;
           height: 40px;
           background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 0.9rem;
+          box-shadow: var(--shadow-sm);
         }
         .emp-avatar.role-region-head {
           background: linear-gradient(135deg, #ef4444, #dc2626);
@@ -323,14 +331,6 @@ const SearchPage: React.FC = () => {
         }
         .emp-avatar.role-assistant {
           background: linear-gradient(135deg, #10b981, #059669);
-          color: white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 700;
-          font-size: 0.9rem;
-          box-shadow: var(--shadow-sm);
         }
         
         .role-badge {
