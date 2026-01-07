@@ -1,34 +1,34 @@
-```typescript
+
 import { type Employee, type HierarchyLevel } from '../types';
 
 export const HIERARCHY_LEVELS: HierarchyLevel[] = [
     // Level 3 - Global
     { id: 'L3-Global', name: 'L3 - Global', level: 3 },
-    
+
     // Level 4 - Regions
     { id: 'L4-EMEA', name: 'L4 - EMEA', level: 4, parentId: 'L3-Global' },
     { id: 'L4-Americas', name: 'L4 - Americas', level: 4, parentId: 'L3-Global' },
-    
+
     // Level 5 - Sub-regions
     { id: 'L5-WesternEurope', name: 'L5 - Western Europe', level: 5, parentId: 'L4-EMEA' },
     { id: 'L5-NorthAmerica', name: 'L5 - North America', level: 5, parentId: 'L4-Americas' },
-    
+
     // Level 6 - Countries
     { id: 'L6-France', name: 'L6 - France', level: 6, parentId: 'L5-WesternEurope' },
     { id: 'L6-Germany', name: 'L6 - Germany', level: 6, parentId: 'L5-WesternEurope' },
     { id: 'L6-USA', name: 'L6 - USA', level: 6, parentId: 'L5-NorthAmerica' },
-    
+
     // Level 7 - Areas
     { id: 'L7-IleDeFrance', name: 'L7 - Ile de France', level: 7, parentId: 'L6-France' },
     { id: 'L7-Bavaria', name: 'L7 - Bavaria', level: 7, parentId: 'L6-Germany' },
     { id: 'L7-California', name: 'L7 - California', level: 7, parentId: 'L6-USA' },
-    
+
     // Level 8 - Divisions
     { id: 'L8-ParisNorth', name: 'L8 - Paris North', level: 8, parentId: 'L7-IleDeFrance' },
     { id: 'L8-ParisSouth', name: 'L8 - Paris South', level: 8, parentId: 'L7-IleDeFrance' },
     { id: 'L8-Munich', name: 'L8 - Munich', level: 8, parentId: 'L7-Bavaria' },
     { id: 'L8-SanFrancisco', name: 'L8 - San Francisco', level: 8, parentId: 'L7-California' },
-    
+
     // Level 9 - Units
     { id: 'L9-Paris', name: 'L9 - Paris', level: 9, parentId: 'L8-ParisNorth' },
     { id: 'L9-Versailles', name: 'L9 - Versailles', level: 9, parentId: 'L8-ParisSouth' },
