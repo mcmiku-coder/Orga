@@ -15,8 +15,6 @@ const ReportsPage: React.FC = () => {
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [selectedLevelValue, setSelectedLevelValue] = useState<string>('');
 
-  // Role order for sorting
-  const roleOrder = { 'Region Head': 1, 'Team Head': 2, 'Rel': 3, 'Assistant': 4 };
 
   // Get all Level 9s for the dropdown
   const level9Options = useMemo(() => {
@@ -40,88 +38,91 @@ const ReportsPage: React.FC = () => {
     return employees.filter(emp => {
       const path = getHierarchyPath(emp.level9);
       return path.some(h => h.id === selectedLevelValue);
-    }).sort((a, b) => {
-      const orderA = roleOrder[a.role as keyof typeof roleOrder] || 999;
-      const orderB = roleOrder[b.role as keyof typeof roleOrder] || 999;
-      return orderA - orderB;
-    });
+    }).sort((a, b) => a.lastName.localeCompare(b.lastName));
   };
 
   const reportData = useMemo(() => {
     switch (reportType) {
       case 'all':
-        return employees.map(e => ({
+        return [...employees].sort((a, b) => a.lastName.localeCompare(b.lastName)).map(e => ({
           Initials: e.initials,
-          Role: e.role,
-          ID: e.id,
           LastName: e.lastName,
           FirstName: e.firstName,
+          Role: e.role,
           Level9: e.level9,
           Status: e.status
         }));
       case 'by-status':
-        // Assuming 'status' is a property on employee
-        return employees.filter(e => e.status === selectedLevelValue).map(e => ({
-          Initials: e.initials,
-          Role: e.role,
-          ID: e.id,
-          LastName: e.lastName,
-          FirstName: e.firstName,
-          Level9: e.level9,
-          Status: e.status
-        }));
+        return employees
+          .filter(e => e.status === selectedLevelValue)
+          .sort((a, b) => a.lastName.localeCompare(b.lastName))
+          .map(e => ({
+            Initials: e.initials,
+            LastName: e.lastName,
+            FirstName: e.firstName,
+            Role: e.role,
+            Level9: e.level9,
+            Status: e.status
+          }));
       case 'by-level':
         return getLevelMembers().map(e => ({
           Initials: e.initials,
-          Role: e.role,
-          ID: e.id,
           LastName: e.lastName,
           FirstName: e.firstName,
+          Role: e.role,
           Level9: e.level9,
           Status: e.status
         }));
       case 'TEAM_HEADS':
-        return employees.filter(e => e.role === 'Team Head').map(e => ({
-          Initials: e.initials,
-          Role: e.role,
-          ID: e.id,
-          LastName: e.lastName,
-          FirstName: e.firstName,
-          Level9: e.level9,
-          Status: e.status
-        }));
+        return employees
+          .filter(e => e.role === 'Team Head')
+          .sort((a, b) => a.lastName.localeCompare(b.lastName))
+          .map(e => ({
+            Initials: e.initials,
+            LastName: e.lastName,
+            FirstName: e.firstName,
+            Role: e.role,
+            Level9: e.level9,
+            Status: e.status
+          }));
 
       case 'REGION_HEADS':
-        return employees.filter(e => e.role === 'Region Head').map(e => ({
-          ID: e.id,
-          LastName: e.lastName,
-          FirstName: e.firstName,
-          Role: e.role,
-          Level9: e.level9,
-          Level6: getLevel6(e.level9)
-        }));
+        return employees
+          .filter(e => e.role === 'Region Head')
+          .sort((a, b) => a.lastName.localeCompare(b.lastName))
+          .map(e => ({
+            LastName: e.lastName,
+            FirstName: e.firstName,
+            Role: e.role,
+            Level9: e.level9,
+            Level6: getLevel6(e.level9)
+          }));
 
       case 'RELS_BY_L9':
         if (!selectedL9) return [];
-        return employees.filter(e => e.role === 'Rel' && e.level9 === selectedL9).map(e => ({
-          ID: e.id,
-          LastName: e.lastName,
-          FirstName: e.firstName,
-          Initials: e.initials,
-          Role: e.role,
-          Level9: e.level9,
-          Status: e.status
-        }));
+        return employees
+          .filter(e => e.role === 'Rel' && e.level9 === selectedL9)
+          .sort((a, b) => a.lastName.localeCompare(b.lastName))
+          .map(e => ({
+            LastName: e.lastName,
+            FirstName: e.firstName,
+            Initials: e.initials,
+            Role: e.role,
+            Level9: e.level9,
+            Status: e.status
+          }));
 
       case 'ASSISTANTS':
-        return employees.filter(e => e.role === 'Assistant').map(e => ({
-          ID: e.id,
-          LastName: e.lastName,
-          FirstName: e.firstName,
-          Role: e.role,
-          Level9: e.level9,
-          Level6: getLevel6(e.level9)
-        }));
+        return employees
+          .filter(e => e.role === 'Assistant')
+          .sort((a, b) => a.lastName.localeCompare(b.lastName))
+          .map(e => ({
+            LastName: e.lastName,
+            FirstName: e.firstName,
+            Role: e.role,
+            Level9: e.level9,
+            Level6: getLevel6(e.level9)
+          }));
 
       case 'ALL_RELATIONSHIPS':
         return relationships.map(r => {
