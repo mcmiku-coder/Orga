@@ -10,6 +10,8 @@ const ReferencesPage: React.FC = () => {
     const [selectedType, setSelectedType] = useState<ReferenceType>('L9');
     const [newItemName, setNewItemName] = useState('');
     const [newItemParent, setNewItemParent] = useState<string>('');
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState<string>('');
 
     // Get level number from type
     const getLevelNumber = (type: ReferenceType): number | null => {
@@ -92,6 +94,30 @@ const ReferencesPage: React.FC = () => {
         updateHierarchyParent(id, newParentId || undefined);
     };
 
+    const handleNameEdit = (id: string, currentName: string) => {
+        setEditingId(id);
+        setEditingName(currentName);
+    };
+
+    const handleNameSave = (id: string) => {
+        if (!editingName.trim()) {
+            setEditingId(null);
+            return;
+        }
+        if (selectedType === 'Employee') {
+            // Would need updateEmployee
+            setEditingId(null);
+            return;
+        }
+        updateHierarchyLevel(id, editingName);
+        setEditingId(null);
+    };
+
+    const handleNameCancel = () => {
+        setEditingId(null);
+        setEditingName('');
+    };
+
     return (
         <div className="references-page container">
             <div className="page-header glass-panel">
@@ -130,7 +156,30 @@ const ReferencesPage: React.FC = () => {
                     <tbody>
                         {currentData.map(item => (
                             <tr key={item.id}>
-                                <td>{item.name}</td>
+                                <td>
+                                    {editingId === item.id ? (
+                                        <input
+                                            type="text"
+                                            value={editingName}
+                                            onChange={(e) => setEditingName(e.target.value)}
+                                            onBlur={() => handleNameSave(item.id)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleNameSave(item.id);
+                                                if (e.key === 'Escape') handleNameCancel();
+                                            }}
+                                            autoFocus
+                                            className="edit-name-input"
+                                        />
+                                    ) : (
+                                        <span
+                                            className="editable-name"
+                                            onClick={() => handleNameEdit(item.id, item.name)}
+                                            title="Click to edit"
+                                        >
+                                            {item.name}
+                                        </span>
+                                    )}
+                                </td>
                                 <td>
                                     {parentOptions.length > 0 ? (
                                         <select
@@ -346,6 +395,30 @@ const ReferencesPage: React.FC = () => {
                 .add-btn:disabled {
                     opacity: 0.5;
                     cursor: not-allowed;
+                }
+
+                .editable-name {
+                    cursor: pointer;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    transition: all 0.2s;
+                    display: inline-block;
+                    min-width: 150px;
+                }
+                .editable-name:hover {
+                    background: var(--surface-alt);
+                    color: var(--primary);
+                    box-shadow: 0 0 0 1px var(--primary);
+                }
+
+                .edit-name-input {
+                    padding: 6px 10px;
+                    border-radius: var(--radius);
+                    border: 1px solid var(--primary);
+                    background: var(--surface);
+                    color: var(--text-main);
+                    width: 100%;
+                    font-size: 1rem;
                 }
             `}</style>
         </div>
