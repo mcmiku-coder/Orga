@@ -2,9 +2,11 @@ services:
   - type: web
     name: employee-orga-fullstack
     env: node
+    plan: free
+    region: oregon
     buildCommand: npm install && npm run build
     startCommand: npm run start
-    releaseCommand: npm run prisma:migrate:deploy
+    releaseCommand: npm run prisma:db:push
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -14,6 +16,7 @@ services:
 databases:
   - name: orga-db
     plan: free
+    region: oregon
 
 
 
