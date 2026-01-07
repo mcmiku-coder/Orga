@@ -23,8 +23,8 @@ const HomePage: React.FC = () => {
             <div className="features-grid">
                 <div className="feature-card glass-panel" onClick={() => navigate('/search')}>
                     <div className="icon-box"><Search size={32} /></div>
-                    <h3>Search and Edit</h3>
-                    <p>Find employees instantly by name, initials, or hierarchy level.</p>
+                    <h3>Linking</h3>
+                    <p>Manage employee relationships and visualize organizational connections.</p>
                 </div>
                 <div className="feature-card glass-panel" onClick={() => navigate('/hierarchy')}>
                     <div className="icon-box"><Users size={32} /></div>

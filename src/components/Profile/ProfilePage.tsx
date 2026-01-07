@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, MapPin, Plus, Trash2, Edit2, Save } from 'lucide-react';
 import { useData } from '../../context/DataContext';
@@ -12,7 +12,7 @@ import Select from '../UI/Select';
 const ProfilePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { employees, relationships, addRelationship, updateRelationship, deleteRelationship } = useData();
+    const { employees, relationships, addRelationship, updateRelationship, deleteRelationship, getHierarchyPath } = useData();
 
     const employee = employees.find(e => e.id === Number(id));
 
@@ -45,6 +45,13 @@ const ProfilePage: React.FC = () => {
     }
 
     const employeeRelationships = relationships.filter(r => r.ownerInitials === employee.initials);
+
+    // Get Level 6 for an employee
+    const getLevel6 = (level9Id: string) => {
+        const path = getHierarchyPath(level9Id);
+        const l6 = path.find(h => h.level === 6);
+        return l6 ? l6.name : '-';
+    };
 
     const handleOpenModal = (rel?: Relationship) => {
         if (rel) {
@@ -151,6 +158,10 @@ const ProfilePage: React.FC = () => {
                         <span className="value">{employee.id}</span>
                     </div>
                     <div className="info-item">
+                        <span className="label">Level 6</span>
+                        <span className="value flex-center"><MapPin size={16} /> {getLevel6(employee.level9)}</span>
+                    </div>
+                    <div className="info-item">
                         <span className="label">Level 9 Unit</span>
                         <span className="value flex-center"><MapPin size={16} /> {employee.level9}</span>
                     </div>
@@ -160,6 +171,8 @@ const ProfilePage: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <RelationshipGraph employee={employee} relationships={relationships} employees={employees} />
 
             <div className="relationships-section">
                 <div className="section-header">
@@ -527,7 +540,199 @@ const ProfilePage: React.FC = () => {
             background: var(--surface-alt);
             color: var(--primary);
         }
+
+        .graph-section {
+          margin-top: var(--space-xl);
+          padding: var(--space-xl);
+          background: var(--surface);
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-md);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .graph-section h2 { margin-bottom: var(--space-lg); align-self: flex-start; }
+        .relationship-canvas {
+          background: var(--surface-alt);
+          border-radius: var(--radius);
+          box-shadow: inset var(--shadow-sm);
+          max-width: 100%;
+        }
       `}</style>
+        </div>
+    );
+};
+
+interface GraphProps {
+    employee: Employee;
+    relationships: Relationship[];
+    employees: Employee[];
+}
+
+const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, employees }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    const graphData = useMemo(() => {
+        const ownerRels = relationships.filter(r => r.ownerInitials === employee.initials);
+
+        const nodes = [
+            {
+                id: employee.initials,
+                name: `${employee.lastName} ${employee.initials}`,
+                role: employee.role,
+                isCenter: true
+            }
+        ];
+
+        const links: { source: string; target: string; type: string }[] = [];
+
+        ownerRels.forEach(rel => {
+            const targetEmp = employees.find(e => e.initials === rel.targetInitials);
+            nodes.push({
+                id: rel.targetInitials,
+                name: `${rel.targetLastName} ${rel.targetInitials}`,
+                role: targetEmp?.role || 'Rel',
+                isCenter: false
+            });
+
+            if (rel.type === 'works for') {
+                links.push({ source: employee.initials, target: rel.targetInitials, type: 'arrow' });
+            } else if (rel.type === 'boss of') {
+                links.push({ source: rel.targetInitials, target: employee.initials, type: 'arrow' });
+            } else {
+                links.push({ source: employee.initials, target: rel.targetInitials, type: 'line' });
+            }
+        });
+
+        // Deduplicate nodes
+        const uniqueNodes = Array.from(new Map(nodes.map(n => [n.id, n])).values());
+
+        return { nodes: uniqueNodes, links };
+    }, [employee, relationships, employees]);
+
+    useEffect(() => {
+        if (!canvasRef.current || graphData.nodes.length === 0) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = 35;
+        const orbitRadius = 160;
+
+        const roleColors: Record<string, string[]> = {
+            'Region Head': ['#ef4444', '#dc2626'],
+            'Team Head': ['#f97316', '#ea580c'],
+            'Rel': ['#3b82f6', '#2563eb'],
+            'Assistant': ['#10b981', '#059669']
+        };
+
+        const nodePositions = new Map<string, { x: number; y: number }>();
+
+        // Position central node
+        nodePositions.set(employee.initials, { x: centerX, y: centerY });
+
+        // Position others in orbit
+        const others = graphData.nodes.filter(n => !n.isCenter);
+        others.forEach((node, i) => {
+            const angle = (i / others.length) * 2 * Math.PI - Math.PI / 2;
+            nodePositions.set(node.id, {
+                x: centerX + orbitRadius * Math.cos(angle),
+                y: centerY + orbitRadius * Math.sin(angle)
+            });
+        });
+
+        // Draw links
+        ctx.lineWidth = 2;
+        graphData.links.forEach(link => {
+            const start = nodePositions.get(link.source);
+            const end = nodePositions.get(link.target);
+            if (!start || !end) return;
+
+            const angle = Math.atan2(end.y - start.y, end.x - start.x);
+            const startX = start.x + radius * Math.cos(angle);
+            const startY = start.y + radius * Math.sin(angle);
+            const endX = end.x - radius * Math.cos(angle);
+            const endY = end.y - radius * Math.sin(angle);
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#94a3b8';
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            if (link.type === 'arrow') {
+                // Arrow head
+                ctx.beginPath();
+                ctx.fillStyle = '#94a3b8';
+                const headlen = 12;
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX - headlen * Math.cos(angle - Math.PI / 6), endY - headlen * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(endX - headlen * Math.cos(angle + Math.PI / 6), endY - headlen * Math.sin(angle + Math.PI / 6));
+                ctx.closePath();
+                ctx.fill();
+            }
+        });
+
+        // Draw nodes
+        graphData.nodes.forEach(node => {
+            const pos = nodePositions.get(node.id);
+            if (!pos) return;
+
+            const colors = roleColors[node.role] || ['#64748b', '#475569'];
+
+            // Outer glow for center
+            if (node.isCenter) {
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius + 6, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fill();
+            }
+
+            // Circle
+            const gradient = ctx.createLinearGradient(pos.x - radius, pos.y - radius, pos.x + radius, pos.y + radius);
+            gradient.addColorStop(0, colors[0]);
+            gradient.addColorStop(1, colors[1]);
+
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Initials
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.id, pos.x, pos.y);
+
+            // Name below
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 12px Inter';
+            ctx.fillText(node.name, pos.x, pos.y + radius + 18);
+        });
+
+    }, [graphData, employee.initials]);
+
+    return (
+        <div className="graph-section glass-panel">
+            <h2>Relationship Network</h2>
+            <canvas
+                ref={canvasRef}
+                width={800}
+                height={450}
+                className="relationship-canvas"
+            />
         </div>
     );
 };
