@@ -702,14 +702,14 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
             // Determine Arrow Direction based on Hierarchical Role
             // 'works for' means Target works for Owner.
             // Boss = Owner. Sub = Target.
-            // Arrow: Boss -> Sub (Hierarchy Down).
+            // Arrow: Sub -> Boss (Hierarchy Up).
 
             if (rel.type === 'works for' || rel.type === 'boss of') {
-                // Boss -> Sub
-                links.push({ source: rel.ownerInitials, target: rel.targetInitials, type: 'arrow' });
+                // Sub -> Boss
+                links.push({ source: rel.targetInitials, target: rel.ownerInitials, type: 'arrow' });
             } else {
                 // Colleague/Other
-                links.push({ source: rel.ownerInitials, target: rel.targetInitials, type: 'line' });
+                links.push({ source: rel.targetInitials, target: rel.ownerInitials, type: 'line' });
             }
         });
 
@@ -744,11 +744,11 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
         const nodePositions = new Map<string, { x: number; y: number }>();
 
         // Group nodes by their relative position
-        // Managers: Nodes that are Source of an arrow pointing TO current employee (Boss -> Me)
-        // Subordinates: Nodes that are Target of an arrow originating FROM current employee (Me -> Sub)
+        // Managers: Nodes that are Target of an arrow originating FROM current employee (Me -> Boss)
+        // Subordinates: Nodes that are Source of an arrow pointing TO current employee (Sub -> Me)
 
-        const managers = graphData.links.filter(l => l.target === employee.initials && l.type === 'arrow').map(l => l.source);
-        const subordinates = graphData.links.filter(l => l.source === employee.initials && l.type === 'arrow').map(l => l.target);
+        const managers = graphData.links.filter(l => l.source === employee.initials && l.type === 'arrow').map(l => l.target);
+        const subordinates = graphData.links.filter(l => l.target === employee.initials && l.type === 'arrow').map(l => l.source);
 
         // Colleagues: No arrow or line
         const colleagues = graphData.nodes.filter(n => !n.isCenter && !managers.includes(n.id) && !subordinates.includes(n.id)).map(n => n.id);
