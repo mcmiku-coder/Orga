@@ -7,7 +7,7 @@ import { type Relationship, type Employee } from '../../types';
 import Card from '../UI/Card';
 import Modal from '../UI/Modal';
 import Input from '../UI/Input';
-import Select from '../UI/Select';
+
 
 const ProfilePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -60,7 +60,7 @@ const ProfilePage: React.FC = () => {
         } else {
             setEditingRel(null);
             setFormData({
-                type: 'colleague of',
+                type: 'works for',
                 targetLastName: '',
                 targetFirstName: '',
                 targetInitials: '',
@@ -175,11 +175,12 @@ const ProfilePage: React.FC = () => {
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Owner</th>
-                                    <th>Type</th>
-                                    <th>Name</th>
-                                    <th className="text-center">Initials</th>
+                                    <th className="text-center">Linked Person</th>
+                                    <th>Last Name</th>
+                                    <th>First Name</th>
                                     <th>Level 9</th>
+                                    <th className="text-center">Type</th>
+                                    <th className="text-center">Current Person</th>
                                     <th>Dates</th>
                                     <th style={{ textAlign: 'right' }}>Actions</th>
                                 </tr>
@@ -198,22 +199,23 @@ const ProfilePage: React.FC = () => {
                                         return (
                                             <tr key={rel.id}>
                                                 <td className="text-center">
-                                                    <div className="flex-center">
-                                                        <div className={`emp-avatar-sm ${ownerRoleClass}`}>
-                                                            {employee.initials}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td><span className="badge-outline">{rel.type}</span></td>
-                                                <td className="font-medium">{rel.targetLastName} {rel.targetFirstName}</td>
-                                                <td className="text-center">
-                                                    <div className="flex-center">
+                                                    <div className="flex-center" style={{ justifyContent: 'center' }}>
                                                         <div className={`emp-avatar-sm ${targetRoleClass}`}>
                                                             {rel.targetInitials}
                                                         </div>
                                                     </div>
                                                 </td>
+                                                <td className="font-medium">{rel.targetLastName}</td>
+                                                <td className="font-medium">{rel.targetFirstName}</td>
                                                 <td>{rel.targetLevel9}</td>
+                                                <td className="text-center"><span className="badge-outline">works for</span></td>
+                                                <td className="text-center">
+                                                    <div className="flex-center" style={{ justifyContent: 'center' }}>
+                                                        <div className={`emp-avatar-sm ${ownerRoleClass}`}>
+                                                            {employee.initials}
+                                                        </div>
+                                                    </div>
+                                                </td>
                                                 <td className="text-sm text-muted">
                                                     {rel.startDate} {rel.endDate ? `— ${rel.endDate}` : '(Current)'}
                                                 </td>
@@ -243,16 +245,18 @@ const ProfilePage: React.FC = () => {
                 title={editingRel ? "Edit Relationship" : "Add Relationship"}
             >
                 <div className="form-grid">
-                    <Select
+                    {/* <Select
                         label="Relationship Type"
                         value={formData.type}
                         onChange={e => setFormData({ ...formData, type: e.target.value as any })}
                         options={[
                             { label: 'works for', value: 'works for' },
-                            { label: 'boss of', value: 'boss of' },
-                            { label: 'colleague of', value: 'colleague of' },
                         ]}
-                    />
+                        disabled={true}
+                    /> */}
+                    <div className="info-block" style={{ marginBottom: '1rem', padding: '0.5rem', background: 'var(--surface-alt)', borderRadius: '4px' }}>
+                        <strong>Relationship:</strong> Target Person works for {employee.initials}
+                    </div>
 
                     <div className="divider">Target Person Details</div>
 
@@ -644,11 +648,13 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
             });
 
             if (rel.type === 'works for') {
-                // target is the boss, employee is the worker
+                // target (subordinate) works for employee (boss)
+                // ARROW: Target -> Employee
                 links.push({ source: rel.targetInitials, target: employee.initials, type: 'arrow' });
             } else if (rel.type === 'boss of') {
-                // employee is the boss, target is the worker
-                links.push({ source: employee.initials, target: rel.targetInitials, type: 'arrow' });
+                // Backward compatibility: employee (boss) is boss of target (subordinate)
+                // ARROW: Target -> Employee
+                links.push({ source: rel.targetInitials, target: employee.initials, type: 'arrow' });
             } else {
                 links.push({ source: employee.initials, target: rel.targetInitials, type: 'line' });
             }
