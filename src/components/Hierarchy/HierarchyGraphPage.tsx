@@ -52,10 +52,10 @@ const HierarchyGraphPage: React.FC = () => {
     const graphData = useMemo(() => {
         if (selectedLevel === 'Employee') {
             const nodes = filteredEmployees.map(emp => ({
-                id: emp.id,
+                id: String(emp.id),
                 name: `${emp.firstName} ${emp.lastName}`,
                 level: 99, // Special level for styling
-                parentId: null,
+                parentId: undefined,
                 // Add extra properties we might need for rendering
                 initials: emp.initials,
                 role: emp.role,
