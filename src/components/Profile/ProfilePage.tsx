@@ -44,7 +44,9 @@ const ProfilePage: React.FC = () => {
         );
     }
 
-    const employeeRelationships = relationships.filter(r => r.ownerInitials === employee.initials);
+    const employeeRelationships = relationships.filter(r =>
+        r.ownerInitials === employee.initials || r.targetInitials === employee.initials
+    );
 
     // Get Level 6 for an employee
     const getLevel6 = (level9Id: string) => {
@@ -175,12 +177,12 @@ const ProfilePage: React.FC = () => {
                         <table>
                             <thead>
                                 <tr>
-                                    <th className="text-center">Linked Person</th>
+                                    <th className="text-center">Employee</th>
                                     <th>Last Name</th>
                                     <th>First Name</th>
                                     <th>Level 9</th>
                                     <th className="text-center">Type</th>
-                                    <th className="text-center">Current Person</th>
+                                    <th className="text-center">Manager</th>
                                     <th>Dates</th>
                                     <th style={{ textAlign: 'right' }}>Actions</th>
                                 </tr>
@@ -192,30 +194,53 @@ const ProfilePage: React.FC = () => {
                                     </tr>
                                 ) : (
                                     employeeRelationships.map(rel => {
-                                        const targetEmp = employees.find(e => e.initials === rel.targetInitials);
-                                        const targetRoleClass = targetEmp ? `role-${targetEmp.role.toLowerCase().replace(' ', '-')}` : '';
-                                        const ownerRoleClass = `role-${employee.role.toLowerCase().replace(' ', '-')}`;
+                                        // Determine who is Subordinate (Employee) and who is Boss (Manager)
+                                        // Logic: 'works for' means Target works for Owner.
+                                        // So Owner = Boss, Target = Subordinate.
+
+                                        // Legacy 'boss of': Owner is boss of Target. Same structure: Owner=Boss, Target=Sub.
+
+                                        const bossInitials = rel.ownerInitials; // Owner is Boss
+                                        const subInitials = rel.targetInitials; // Target is Subordinate
+
+                                        // Get actual Employee objects to display details
+                                        const bossEmp = employees.find(e => e.initials === bossInitials);
+                                        const subEmp = employees.find(e => e.initials === subInitials);
+
+                                        // Safe fallbacks if person not found (shouldn't happen)
+                                        const subLastName = rel.targetLastName;
+                                        const subFirstName = rel.targetFirstName;
+                                        const subLevel9 = rel.targetLevel9;
+
+                                        const subRoleClass = subEmp ? `role-${subEmp.role.toLowerCase().replace(' ', '-')}` : '';
+                                        const bossRoleClass = bossEmp ? `role-${bossEmp.role.toLowerCase().replace(' ', '-')}` : '';
 
                                         return (
                                             <tr key={rel.id}>
+                                                {/* Employee (Subordinate) Column */}
                                                 <td className="text-center">
                                                     <div className="flex-center" style={{ justifyContent: 'center' }}>
-                                                        <div className={`emp-avatar-sm ${targetRoleClass}`}>
-                                                            {rel.targetInitials}
+                                                        <div className={`emp-avatar-sm ${subRoleClass}`}>
+                                                            {subInitials}
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="font-medium">{rel.targetLastName}</td>
-                                                <td className="font-medium">{rel.targetFirstName}</td>
-                                                <td>{rel.targetLevel9}</td>
+                                                <td className="font-medium">{subLastName}</td>
+                                                <td className="font-medium">{subFirstName}</td>
+                                                <td>{subLevel9}</td>
+
+                                                {/* Type Column */}
                                                 <td className="text-center"><span className="badge-outline">works for</span></td>
+
+                                                {/* Manager (Boss) Column */}
                                                 <td className="text-center">
                                                     <div className="flex-center" style={{ justifyContent: 'center' }}>
-                                                        <div className={`emp-avatar-sm ${ownerRoleClass}`}>
-                                                            {employee.initials}
+                                                        <div className={`emp-avatar-sm ${bossRoleClass}`}>
+                                                            {bossInitials}
                                                         </div>
                                                     </div>
                                                 </td>
+
                                                 <td className="text-sm text-muted">
                                                     {rel.startDate} {rel.endDate ? `— ${rel.endDate}` : '(Current)'}
                                                 </td>
@@ -625,7 +650,10 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const graphData = useMemo(() => {
-        const ownerRels = relationships.filter(r => r.ownerInitials === employee.initials);
+        // Fetch all relationships involving the employee
+        const relatedRels = relationships.filter(r =>
+            r.ownerInitials === employee.initials || r.targetInitials === employee.initials
+        );
 
         const nodes = [
             {
@@ -638,25 +666,50 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
 
         const links: { source: string; target: string; type: string }[] = [];
 
-        ownerRels.forEach(rel => {
-            const targetEmp = employees.find(e => e.initials === rel.targetInitials);
+        relatedRels.forEach(rel => {
+            // Identify the "Other" person in the relationship to add their node
+            const isOwner = rel.ownerInitials === employee.initials;
+            const otherInitials = isOwner ? rel.targetInitials : rel.ownerInitials;
+
+            // Get Other Person details safely
+            // For target, we have fields. For owner, we must find in employees list.
+            let otherName = '';
+            let otherRole: any = 'Rel'; // Default
+
+            if (isOwner) {
+                // I am Owner. Other is Target.
+                otherName = `${rel.targetLastName} ${rel.targetInitials}`;
+                const targetEmp = employees.find(e => e.initials === rel.targetInitials);
+                if (targetEmp) otherRole = targetEmp.role;
+            } else {
+                // I am Target. Other is Owner.
+                const ownerEmp = employees.find(e => e.initials === rel.ownerInitials);
+                if (ownerEmp) {
+                    otherName = `${ownerEmp.lastName} ${ownerEmp.initials}`;
+                    otherRole = ownerEmp.role;
+                } else {
+                    otherName = otherInitials; // Fallback
+                }
+            }
+
             nodes.push({
-                id: rel.targetInitials,
-                name: `${rel.targetLastName} ${rel.targetInitials}`,
-                role: targetEmp?.role || 'Rel',
+                id: otherInitials,
+                name: otherName,
+                role: otherRole,
                 isCenter: false
             });
 
-            if (rel.type === 'works for') {
-                // target (subordinate) works for employee (boss)
-                // ARROW: Target -> Employee
-                links.push({ source: rel.targetInitials, target: employee.initials, type: 'arrow' });
-            } else if (rel.type === 'boss of') {
-                // Backward compatibility: employee (boss) is boss of target (subordinate)
-                // ARROW: Target -> Employee
-                links.push({ source: rel.targetInitials, target: employee.initials, type: 'arrow' });
+            // Determine Arrow Direction based on Hierarchical Role
+            // 'works for' means Target works for Owner.
+            // Boss = Owner. Sub = Target.
+            // Arrow: Boss -> Sub (Hierarchy Down).
+
+            if (rel.type === 'works for' || rel.type === 'boss of') {
+                // Boss -> Sub
+                links.push({ source: rel.ownerInitials, target: rel.targetInitials, type: 'arrow' });
             } else {
-                links.push({ source: employee.initials, target: rel.targetInitials, type: 'line' });
+                // Colleague/Other
+                links.push({ source: rel.ownerInitials, target: rel.targetInitials, type: 'line' });
             }
         });
 
@@ -691,8 +744,13 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
         const nodePositions = new Map<string, { x: number; y: number }>();
 
         // Group nodes by their relative position
+        // Managers: Nodes that are Source of an arrow pointing TO current employee (Boss -> Me)
+        // Subordinates: Nodes that are Target of an arrow originating FROM current employee (Me -> Sub)
+
         const managers = graphData.links.filter(l => l.target === employee.initials && l.type === 'arrow').map(l => l.source);
         const subordinates = graphData.links.filter(l => l.source === employee.initials && l.type === 'arrow').map(l => l.target);
+
+        // Colleagues: No arrow or line
         const colleagues = graphData.nodes.filter(n => !n.isCenter && !managers.includes(n.id) && !subordinates.includes(n.id)).map(n => n.id);
 
         // Determine horizontal positions
