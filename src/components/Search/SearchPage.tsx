@@ -10,10 +10,16 @@ const SearchPage: React.FC = () => {
   const navigate = useNavigate();
 
   // Get Level 6 for an employee
+  // Get Level 6 for an employee
   const getLevel6 = (level9Id: string) => {
     const path = getHierarchyPath(level9Id);
     const l6 = path.find(h => h.level === 6);
     return l6 ? l6.name : '-';
+  };
+
+  const getL9Name = (id: string) => {
+    const node = hierarchy.find(h => h.id === id);
+    return node ? node.name : id;
   };
 
   // State for inline editing
@@ -118,7 +124,7 @@ const SearchPage: React.FC = () => {
     // Level 9
     return (
       <span onClick={(e) => startEdit(e, emp.id, field)} className="editable-text">
-        {emp.level9}
+        {getL9Name(emp.level9)}
       </span>
     );
   };
@@ -311,7 +317,7 @@ const SearchPage: React.FC = () => {
         .role-badge {
           font-size: 0.95rem;
           background: var(--surface-alt);
-          color: var(--text-light);
+          color: rgba(255, 255, 255, 0.9);
           border: 1px solid var(--border);
           padding: 2px 8px;
           border-radius: 12px;
