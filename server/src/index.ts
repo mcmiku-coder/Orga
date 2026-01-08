@@ -129,7 +129,7 @@ app.delete('/api/hierarchy/:id', async (req, res) => {
 });
 
 // Fallback to React app
-app.get('*', (req, res) => {
+app.get('/:path*', (req, res) => {
     res.sendFile(path.join(__dirname, '../../dist/index.html'));
 });
 
