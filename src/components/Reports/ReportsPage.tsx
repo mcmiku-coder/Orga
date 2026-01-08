@@ -91,6 +91,7 @@ const ReportsPage: React.FC = () => {
           .filter(e => e.role === 'Region Head')
           .sort((a, b) => a.lastName.localeCompare(b.lastName))
           .map(e => ({
+            Initials: e.initials,
             LastName: e.lastName,
             FirstName: e.firstName,
             Role: e.role,
