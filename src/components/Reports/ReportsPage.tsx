@@ -24,10 +24,25 @@ const ReportsPage: React.FC = () => {
   }, [hierarchy]);
 
   // Helper to get Level 6 from Level 9
-  const getLevel6 = (l9Id: string) => {
-    const path = getHierarchyPath(l9Id);
+  // Helper to get Level 6 from Level 9
+  const getLevel6 = (l9NameOrId: string) => {
+    // Current data often has Names in emp.level9? Or IDs?
+    // Let's rely on finding the L9 node first.
+    // Wait, getHierarchyPath expects an ID?
+    // HierarchyGraphPage uses emp.level9 as Name.
+    // If emp.level9 is Name, we need to find ID first.
+
+    const l9Node = hierarchy.find(h => h.name === l9NameOrId && h.level === 9);
+    if (!l9Node) return { name: '-', id: '-' };
+
+    const path = getHierarchyPath(l9Node.id);
     const l6 = path.find(h => h.level === 6);
-    return l6 ? l6.name : '-';
+    return { name: l6?.name || '-', id: l6?.id || '-' };
+  };
+
+  const getLevel9Id = (l9Name: string) => {
+    const l9Node = hierarchy.find(h => h.name === l9Name && h.level === 9);
+    return l9Node ? l9Node.id : l9Name;
   };
 
   // Get employees for selected level value
@@ -44,86 +59,112 @@ const ReportsPage: React.FC = () => {
   const reportData = useMemo(() => {
     switch (reportType) {
       case 'all':
-        return [...employees].sort((a, b) => a.lastName.localeCompare(b.lastName)).map(e => ({
-          Initials: e.initials,
-          LastName: e.lastName,
-          FirstName: e.firstName,
-          Role: e.role,
-          Level9: e.level9,
-          Status: e.status
-        }));
+        return [...employees].sort((a, b) => a.lastName.localeCompare(b.lastName)).map(e => {
+          const l6Info = getLevel6(e.level9);
+          return {
+            Initials: e.initials,
+            LastName: e.lastName,
+            FirstName: e.firstName,
+            Role: e.role,
+            Level6: l6Info.id,
+            Level9: getLevel9Id(e.level9),
+            Status: e.status
+          };
+        });
       case 'by-status':
         return employees
           .filter(e => e.status === selectedLevelValue)
           .sort((a, b) => a.lastName.localeCompare(b.lastName))
-          .map(e => ({
+          .map(e => {
+            const l6Info = getLevel6(e.level9);
+            return {
+              Initials: e.initials,
+              LastName: e.lastName,
+              FirstName: e.firstName,
+              Role: e.role,
+              Level6: l6Info.id,
+              Level9: getLevel9Id(e.level9),
+              Status: e.status
+            };
+          });
+      case 'by-level':
+        return getLevelMembers().map(e => {
+          const l6Info = getLevel6(e.level9);
+          return {
             Initials: e.initials,
             LastName: e.lastName,
             FirstName: e.firstName,
             Role: e.role,
-            Level9: e.level9,
+            Level6: l6Info.id,
+            Level9: getLevel9Id(e.level9),
             Status: e.status
-          }));
-      case 'by-level':
-        return getLevelMembers().map(e => ({
-          Initials: e.initials,
-          LastName: e.lastName,
-          FirstName: e.firstName,
-          Role: e.role,
-          Level9: e.level9,
-          Status: e.status
-        }));
+          };
+        });
       case 'TEAM_HEADS':
         return employees
           .filter(e => e.role === 'Team Head')
           .sort((a, b) => a.lastName.localeCompare(b.lastName))
-          .map(e => ({
-            Initials: e.initials,
-            LastName: e.lastName,
-            FirstName: e.firstName,
-            Role: e.role,
-            Level9: e.level9,
-            Status: e.status
-          }));
+          .map(e => {
+            const l6Info = getLevel6(e.level9);
+            return {
+              Initials: e.initials,
+              LastName: e.lastName,
+              FirstName: e.firstName,
+              Role: e.role,
+              Level6: l6Info.id,
+              Level9: getLevel9Id(e.level9),
+              Status: e.status
+            };
+          });
 
       case 'REGION_HEADS':
         return employees
           .filter(e => e.role === 'Region Head')
           .sort((a, b) => a.lastName.localeCompare(b.lastName))
-          .map(e => ({
-            Initials: e.initials,
-            LastName: e.lastName,
-            FirstName: e.firstName,
-            Role: e.role,
-            Level9: e.level9,
-            Level6: getLevel6(e.level9)
-          }));
+          .map(e => {
+            const l6Info = getLevel6(e.level9);
+            return {
+              Initials: e.initials,
+              LastName: e.lastName,
+              FirstName: e.firstName,
+              Role: e.role,
+              Level6: l6Info.id,
+              Level9: getLevel9Id(e.level9)
+            };
+          });
 
       case 'RELS_BY_L9':
         if (!selectedL9) return [];
         return employees
           .filter(e => e.role === 'Rel' && e.level9 === selectedL9)
           .sort((a, b) => a.lastName.localeCompare(b.lastName))
-          .map(e => ({
-            LastName: e.lastName,
-            FirstName: e.firstName,
-            Initials: e.initials,
-            Role: e.role,
-            Level9: e.level9,
-            Status: e.status
-          }));
+          .map(e => {
+            const l6Info = getLevel6(e.level9);
+            return {
+              LastName: e.lastName,
+              FirstName: e.firstName,
+              Initials: e.initials,
+              Role: e.role,
+              Level6: l6Info.id,
+              Level9: getLevel9Id(e.level9),
+              Status: e.status
+            };
+          });
 
       case 'ASSISTANTS':
         return employees
           .filter(e => e.role === 'Assistant')
           .sort((a, b) => a.lastName.localeCompare(b.lastName))
-          .map(e => ({
-            LastName: e.lastName,
-            FirstName: e.firstName,
-            Role: e.role,
-            Level9: e.level9,
-            Level6: getLevel6(e.level9)
-          }));
+          .map(e => {
+            const l6Info = getLevel6(e.level9);
+            return {
+              LastName: e.lastName,
+              FirstName: e.firstName,
+              Role: e.role,
+              Level6: l6Info.id,
+              Level9: getLevel9Id(e.level9)
+            };
+          });
 
       case 'ALL_RELATIONSHIPS':
         return relationships.map(r => {
