@@ -28,12 +28,12 @@ const HierarchyGraphPage: React.FC = () => {
         if (selectedLevel !== 'Employee') return [];
 
         return employees.filter(emp => {
-            // Filter by "only with colleagues"
+            // Filter by "only with linked employees"
             if (onlyWithColleagues) {
-                const hasColleagues = relationships.some(r =>
-                    r.ownerInitials === emp.initials && r.type === 'colleague of'
+                const hasLinks = relationships.some(r =>
+                    r.ownerInitials === emp.initials || r.targetInitials === emp.initials
                 );
-                if (!hasColleagues) return false;
+                if (!hasLinks) return false;
             }
 
             // Filter by Sub-filter (Role)
@@ -224,7 +224,7 @@ const HierarchyGraphPage: React.FC = () => {
                                 checked={onlyWithColleagues}
                                 onChange={(e) => setOnlyWithColleagues(e.target.checked)}
                             />
-                            Only employees with linked colleagues
+                            Only employees with links
                         </label>
 
                         <select
@@ -272,14 +272,16 @@ const HierarchyGraphPage: React.FC = () => {
                                 <tbody>
                                     {filteredEmployees.map(emp => {
                                         // Count Employees (Subordinates): People who work for THIS employee
-                                        // 'works for': Target (Sub) -> Owner (Boss). 
-                                        // If I am Boss (Owner), count is Subordinates.
-                                        const subordinatCount = relationships.filter(r => r.ownerInitials === emp.initials && r.type === 'works for').length;
+                                        // If I am Owner, I am Boss (if type is 'works for' or 'boss of').
+                                        const subordinatCount = relationships.filter(r =>
+                                            r.ownerInitials === emp.initials && (r.type === 'works for' || r.type === 'boss of')
+                                        ).length;
 
                                         // Count Bosses (Managers): People THIS employee works for
-                                        // 'works for': Target (Sub) -> Owner (Boss).
-                                        // If I am Sub (Target), count is Bosses.
-                                        const bossCount = relationships.filter(r => r.targetInitials === emp.initials && r.type === 'works for').length;
+                                        // If I am Target, I am Subordinate (if type is 'works for' or 'boss of').
+                                        const bossCount = relationships.filter(r =>
+                                            r.targetInitials === emp.initials && (r.type === 'works for' || r.type === 'boss of')
+                                        ).length;
 
                                         const roleClass = `role-${emp.role.toLowerCase().replace(' ', '-')}`;
                                         // Get Level 6 (parent of L9)
