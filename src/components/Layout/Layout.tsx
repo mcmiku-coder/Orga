@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Search, FileText, House, Users, Database } from 'lucide-react';
+import { FileText, House, Users, Database, Link } from 'lucide-react';
 
 const Layout: React.FC = () => {
   return (
@@ -23,8 +23,14 @@ const Layout: React.FC = () => {
             </NavLink>
           </li>
           <li>
+            <NavLink to="/references" className={({ isActive }) => isActive ? 'active' : ''}>
+              <Database size={20} />
+              <span>References</span>
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/search" className={({ isActive }) => isActive ? 'active' : ''}>
-              <Search size={20} />
+              <Link size={20} />
               <span>Linking</span>
             </NavLink>
           </li>
@@ -32,12 +38,6 @@ const Layout: React.FC = () => {
             <NavLink to="/hierarchy" className={({ isActive }) => isActive ? 'active' : ''}>
               <Users size={20} />
               <span>Hierarchy</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/references" className={({ isActive }) => isActive ? 'active' : ''}>
-              <Database size={20} />
-              <span>References</span>
             </NavLink>
           </li>
           <li>
