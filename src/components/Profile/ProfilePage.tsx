@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, MapPin, Plus, Trash2, Edit2, Save } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { type Relationship, type Employee } from '../../types';
@@ -12,6 +12,8 @@ import Input from '../UI/Input';
 const ProfilePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
+    const fromHierarchy = location.state?.from === 'hierarchy';
     const { employees, relationships, addRelationship, updateRelationship, deleteRelationship, getHierarchyPath } = useData();
 
     const employee = employees.find(e => e.id === Number(id));
@@ -138,8 +140,8 @@ const ProfilePage: React.FC = () => {
 
     return (
         <div className="profile-page container fade-in">
-            <button onClick={() => navigate('/search')} className="back-link">
-                <ArrowLeft size={16} /> Back to Search
+            <button onClick={() => navigate(fromHierarchy ? '/hierarchy' : '/search')} className="back-link">
+                <ArrowLeft size={16} /> {fromHierarchy ? 'Back to Hierarchy' : 'Back to Search'}
             </button>
 
             <div className="profile-header glass-panel">

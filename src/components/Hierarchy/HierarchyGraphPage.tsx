@@ -290,7 +290,7 @@ const HierarchyGraphPage: React.FC = () => {
                                         const l6Name = l6Node ? l6Node.name : '-';
 
                                         return (
-                                            <tr key={emp.id} onClick={() => navigate(`/profile/${emp.id}`)} style={{ cursor: 'pointer' }}>
+                                            <tr key={emp.id} onClick={() => navigate(`/employee/${emp.id}`, { state: { from: 'hierarchy' } })} style={{ cursor: 'pointer' }}>
                                                 <td className="text-center">
                                                     <div className="flex-center" style={{ justifyContent: 'center' }}>
                                                         <div className={`emp-avatar-sm ${roleClass}`}>
