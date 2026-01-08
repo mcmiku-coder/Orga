@@ -1,9 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../../context/DataContext';
+import { useNavigate } from 'react-router-dom';
 import type { HierarchyLevel } from '../../types';
 
 const HierarchyGraphPage: React.FC = () => {
     const { hierarchy, getHierarchyPath, employees, relationships } = useData();
+    const navigate = useNavigate();
     const [selectedLevel, setSelectedLevel] = useState<number | 'Employee' | null>(null);
     const [selectedValue, setSelectedValue] = useState<string>('');
     const [onlyWithColleagues, setOnlyWithColleagues] = useState(true);
@@ -34,8 +36,8 @@ const HierarchyGraphPage: React.FC = () => {
                 if (!hasColleagues) return false;
             }
 
-            // Filter by Sub-filter (Level 9)
-            if (subFilterValue && emp.level9 !== subFilterValue) {
+            // Filter by Sub-filter (Role)
+            if (subFilterValue && subFilterValue !== 'All' && emp.role !== subFilterValue) {
                 return false;
             }
 
@@ -43,25 +45,14 @@ const HierarchyGraphPage: React.FC = () => {
         }).sort((a, b) => a.lastName.localeCompare(b.lastName));
     }, [selectedLevel, employees, relationships, onlyWithColleagues, subFilterValue]);
 
-    // Level 9 Units for the sub-filter
-    const l9Units = useMemo(() => {
-        return hierarchy.filter(h => h.level === 9).sort((a, b) => a.name.localeCompare(b.name));
-    }, [hierarchy]);
+    // Roles for the sub-filter
+    const roles = ['All', 'Region Head', 'Team Head', 'Rel', 'Assistant'];
 
     // Build graph data
     const graphData = useMemo(() => {
         if (selectedLevel === 'Employee') {
-            const nodes = filteredEmployees.map(emp => ({
-                id: String(emp.id),
-                name: `${emp.firstName} ${emp.lastName}`,
-                level: 99, // Special level for styling
-                parentId: undefined,
-                // Add extra properties we might need for rendering
-                initials: emp.initials,
-                role: emp.role,
-                status: emp.status
-            }));
-            return { nodes, links: [] };
+            // No graph nodes needed for table view, return empty
+            return { nodes: [], links: [] };
         }
 
         if (!selectedValue) return { nodes: [], links: [] };
@@ -122,54 +113,7 @@ const HierarchyGraphPage: React.FC = () => {
 
         const nodePositions = new Map<string, { x: number; y: number }>();
 
-        if (selectedLevel === 'Employee') {
-            // GRID LAYOUT FOR EMPLOYEES
-            const padding = 60;
-            const nodeRadius = 35;
-            const gap = 20;
-            const cols = Math.floor((width - padding * 2) / (nodeRadius * 2 + gap));
-
-            graphData.nodes.forEach((node, index) => {
-                const col = index % cols;
-                const row = Math.floor(index / cols);
-
-                const x = padding + col * (nodeRadius * 2 + gap) + nodeRadius;
-                const y = padding + row * (nodeRadius * 2 + gap) + nodeRadius;
-
-                nodePositions.set(node.id, { x, y });
-
-                // Draw Employee Node
-                ctx.beginPath();
-                ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
-                ctx.fillStyle = levelColors[99];
-                ctx.fill();
-
-                // Border
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#ffffff';
-                ctx.stroke();
-
-                // Initials
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 16px Inter';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                // @ts-ignore - visuals property we added
-                ctx.fillText(node.initials || node.name.substring(0, 2).toUpperCase(), x, y);
-
-                // Name below
-                ctx.fillStyle = '#e5e7eb';
-                ctx.font = '12px Inter';
-                const nameParts = node.name.split(' ');
-                const lastName = nameParts[nameParts.length - 1];
-                ctx.fillText(lastName, x, y + nodeRadius + 15);
-            });
-
-            // Adjust canvas height if needed for scrolling (not supported in simple canvas, but we can clamp)
-            // For now, we fit in fixed height or need to make canvas dynamic. 
-            // Fixed height is 600 in JSX.
-
-        } else {
+        if (selectedLevel !== 'Employee') {
             // ORIGINAL TREE LAYOUT
             const levelGroups = new Map<number, HierarchyLevel[]>();
 
@@ -288,9 +232,9 @@ const HierarchyGraphPage: React.FC = () => {
                             onChange={(e) => setSubFilterValue(e.target.value)}
                             className="value-selector"
                         >
-                            <option value="">-- All Level 9 Units --</option>
-                            {l9Units.map(unit => (
-                                <option key={unit.id} value={unit.name}>{unit.name}</option>
+                            <option value="">-- Select Role --</option>
+                            {roles.map(role => (
+                                <option key={role} value={role}>{role}</option>
                             ))}
                         </select>
                     </>
@@ -308,8 +252,69 @@ const HierarchyGraphPage: React.FC = () => {
                 )}
             </div>
 
-            <div className="graph-container glass-panel">
-                {(selectedValue || (selectedLevel === 'Employee' && filteredEmployees.length > 0)) ? (
+            <div className={`graph-container glass-panel ${selectedLevel === 'Employee' ? 'no-padding' : ''}`}>
+                {selectedLevel === 'Employee' ? (
+                    filteredEmployees.length > 0 ? (
+                        <div className="table-container">
+                            <table className="employee-table">
+                                <thead>
+                                    <tr>
+                                        <th className="text-center">Initials</th>
+                                        <th>Last Name</th>
+                                        <th>First Name</th>
+                                        <th>Role</th>
+                                        <th>L6</th>
+                                        <th>L9</th>
+                                        <th className="text-center"># Employees</th>
+                                        <th className="text-center"># Bosses</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredEmployees.map(emp => {
+                                        // Count Employees (Subordinates): People who work for THIS employee
+                                        // 'works for': Target (Sub) -> Owner (Boss). 
+                                        // If I am Boss (Owner), count is Subordinates.
+                                        const subordinatCount = relationships.filter(r => r.ownerInitials === emp.initials && r.type === 'works for').length;
+
+                                        // Count Bosses (Managers): People THIS employee works for
+                                        // 'works for': Target (Sub) -> Owner (Boss).
+                                        // If I am Sub (Target), count is Bosses.
+                                        const bossCount = relationships.filter(r => r.targetInitials === emp.initials && r.type === 'works for').length;
+
+                                        const roleClass = `role-${emp.role.toLowerCase().replace(' ', '-')}`;
+                                        // Get Level 6 (parent of L9)
+                                        const l9Node = hierarchy.find(h => h.name === emp.level9 && h.level === 9);
+                                        const l6Node = l9Node ? hierarchy.find(h => h.id === l9Node.parentId) : null;
+                                        const l6Name = l6Node ? l6Node.name : '-';
+
+                                        return (
+                                            <tr key={emp.id} onClick={() => navigate(`/profile/${emp.id}`)} style={{ cursor: 'pointer' }}>
+                                                <td className="text-center">
+                                                    <div className="flex-center" style={{ justifyContent: 'center' }}>
+                                                        <div className={`emp-avatar-sm ${roleClass}`}>
+                                                            {emp.initials}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="font-medium">{emp.lastName}</td>
+                                                <td className="font-medium">{emp.firstName}</td>
+                                                <td><span className={`badge ${roleClass}`}>{emp.role}</span></td>
+                                                <td>{l6Name}</td>
+                                                <td>{emp.level9}</td>
+                                                <td className="text-center font-bold">{subordinatCount}</td>
+                                                <td className="text-center font-bold">{bossCount}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="empty-state">
+                            <p>No employees found matching the current filters.</p>
+                        </div>
+                    )
+                ) : (selectedValue) ? (
                     <canvas
                         ref={canvasRef}
                         width={1200}
@@ -318,11 +323,7 @@ const HierarchyGraphPage: React.FC = () => {
                     />
                 ) : (
                     <div className="empty-state">
-                        {selectedLevel === 'Employee' ? (
-                            <p>No employees found matching the current filters.</p>
-                        ) : (
-                            <p>Select a level and value to view the hierarchy graph</p>
-                        )}
+                        <p>Select a level and value to view the hierarchy graph</p>
                     </div>
                 )}
             </div>
@@ -381,6 +382,68 @@ const HierarchyGraphPage: React.FC = () => {
                     text-align: center;
                     color: var(--text-muted);
                     padding: var(--space-xl);
+                }
+
+                .no-padding {
+                    padding: 0 !important;
+                    overflow: hidden;
+                }
+
+                .table-container {
+                    width: 100%;
+                    overflow-x: auto;
+                }
+
+                .employee-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+
+                .employee-table th, .employee-table td {
+                    padding: var(--space-md);
+                    text-align: left;
+                    border-bottom: 1px solid var(--border);
+                }
+
+                .employee-table th {
+                    background: rgba(255, 255, 255, 0.05);
+                    color: var(--text-muted);
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                }
+
+                .employee-table tr:last-child td {
+                    border-bottom: none;
+                }
+
+                .employee-table tr:hover {
+                    background: rgba(255, 255, 255, 0.05);
+                }
+
+                .emp-avatar-sm {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 600;
+                    font-size: 0.75rem;
+                    color: white;
+                }
+                
+                .role-region-head { background: linear-gradient(135deg, #ef4444, #dc2626); }
+                .role-team-head { background: linear-gradient(135deg, #f97316, #ea580c); }
+                .role-rel { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+                .role-assistant { background: linear-gradient(135deg, #10b981, #059669); }
+                
+                .badge {
+                    display: inline-block;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 9999px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: white;
                 }
             `}</style>
         </div>

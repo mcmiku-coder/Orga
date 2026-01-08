@@ -658,7 +658,7 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
         const nodes = [
             {
                 id: employee.initials,
-                name: `${employee.lastName} ${employee.initials}`,
+                name: `${employee.lastName} ${employee.firstName}`,
                 role: employee.role,
                 isCenter: true
             }
@@ -678,14 +678,14 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
 
             if (isOwner) {
                 // I am Owner. Other is Target.
-                otherName = `${rel.targetLastName} ${rel.targetInitials}`;
+                otherName = `${rel.targetLastName} ${rel.targetFirstName}`;
                 const targetEmp = employees.find(e => e.initials === rel.targetInitials);
                 if (targetEmp) otherRole = targetEmp.role;
             } else {
                 // I am Target. Other is Owner.
                 const ownerEmp = employees.find(e => e.initials === rel.ownerInitials);
                 if (ownerEmp) {
-                    otherName = `${ownerEmp.lastName} ${ownerEmp.initials}`;
+                    otherName = `${ownerEmp.lastName} ${ownerEmp.firstName}`;
                     otherRole = ownerEmp.role;
                 } else {
                     otherName = otherInitials; // Fallback
@@ -726,7 +726,26 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
         if (!ctx) return;
 
         const width = canvas.width;
+
+        // Calculate dynamic height based on number of nodes in columns
+        // Group nodes first to count them
+        const managers = graphData.links.filter(l => l.source === employee.initials && l.type === 'arrow').map(l => l.target);
+        const subordinates = graphData.links.filter(l => l.target === employee.initials && l.type === 'arrow').map(l => l.source);
+        const colleagues = graphData.nodes.filter(n => !n.isCenter && !managers.includes(n.id) && !subordinates.includes(n.id)).map(n => n.id);
+
+        const leftCount = managers.length;
+        const rightCount = subordinates.length + colleagues.length;
+        const maxItems = Math.max(leftCount, rightCount, 1); // Ensure at least 1 for center
+
+        const itemHeight = 110;
+        const paddingY = 100;
+        const calculatedHeight = Math.max(400, maxItems * itemHeight + paddingY);
+
+        // Update canvas height if needed (React ref doesn't auto-resize, so we might need to set it on the element or redraw)
+        // Here we just use the calculated height for drawing logic but we need to update the DOM element height too
+        canvas.height = calculatedHeight;
         const height = canvas.height;
+
         ctx.clearRect(0, 0, width, height);
 
         const startX = 100;
@@ -743,15 +762,9 @@ const RelationshipGraph: React.FC<GraphProps> = ({ employee, relationships, empl
 
         const nodePositions = new Map<string, { x: number; y: number }>();
 
-        // Group nodes by their relative position
-        // Managers: Nodes that are Target of an arrow originating FROM current employee (Me -> Boss)
-        // Subordinates: Nodes that are Source of an arrow pointing TO current employee (Sub -> Me)
-
-        const managers = graphData.links.filter(l => l.source === employee.initials && l.type === 'arrow').map(l => l.target);
-        const subordinates = graphData.links.filter(l => l.target === employee.initials && l.type === 'arrow').map(l => l.source);
-
-        // Colleagues: No arrow or line
-        const colleagues = graphData.nodes.filter(n => !n.isCenter && !managers.includes(n.id) && !subordinates.includes(n.id)).map(n => n.id);
+        // Group nodes logic moved up for height calc, reusing logic but recalculating specific arrays 
+        // Data is already available in the variables declared at the top of useEffect.
+        // We just reuse `managers`, `subordinates`, and `colleagues`.
 
         // Determine horizontal positions
         const managerX = startX;
