@@ -9,6 +9,7 @@ import ReferencesPage from './components/References/ReferencesPage';
 import HierarchyGraphPage from './components/Hierarchy/HierarchyGraphPage';
 
 import HomePage from './components/Home/HomePage';
+import AboutPage from './components/About/AboutPage';
 
 // Placeholder components until we build them
 // const SearchPage = () => <div className="p-4">Search Component</div>;
@@ -27,6 +28,7 @@ function App() {
             <Route path="references" element={<ReferencesPage />} />
             <Route path="employee/:id" element={<ProfilePage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="about" element={<AboutPage />} />
           </Route>
         </Routes>
       </DataProvider>

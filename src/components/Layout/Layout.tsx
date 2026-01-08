@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { FileText, House, Users, Database, Link } from 'lucide-react';
+import { FileText, House, Users, Database, Link, Info } from 'lucide-react';
 
 const Layout: React.FC = () => {
   return (
@@ -44,6 +44,12 @@ const Layout: React.FC = () => {
             <NavLink to="/reports" className={({ isActive }) => isActive ? 'active' : ''}>
               <FileText size={20} />
               <span>Reports</span>
+            </NavLink>
+          </li>
+          <li className="mt-auto">
+            <NavLink to="/about" className={({ isActive }) => isActive ? 'active' : ''}>
+              <Info size={20} />
+              <span>About</span>
             </NavLink>
           </li>
         </ul>

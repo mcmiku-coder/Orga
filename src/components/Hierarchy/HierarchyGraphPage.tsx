@@ -139,10 +139,19 @@ const HierarchyGraphPage: React.FC = () => {
             // Determine distinct levels ensuring correct sorting order
             const protectedSortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b);
 
-            // Calculate dynamic height based on number of levels + 1 (padding) * spacing per level
-            // Using 180px per level to ensure no overlap (circle radius is 40px -> 80px diameter + text padding)
-            const calculatedHeight = Math.max(600, (protectedSortedLevels.length + 1) * 180);
+            // Calculate dynamic WIDTH based on max nodes in a single row
+            // Circle diameter is 80px + padding. Using 120px to prevent overlap.
+            const maxNodesInRow = Math.max(...Array.from(levelGroups.values()).map(g => g.length));
+            const calculatedWidth = Math.max(1200, (maxNodesInRow + 1) * 120);
 
+            // Calculate dynamic height based on number of levels + 1 (padding) * spacing per level
+            // User requested short lines (max 1/5 of circle -> ~16px).
+            // Distance = r1(40) + r2(40) + gap(16) + padding ~ 110px.
+            const calculatedHeight = Math.max(600, (protectedSortedLevels.length + 1) * 110);
+
+            if (canvas.width !== calculatedWidth) {
+                canvas.width = calculatedWidth;
+            }
             if (canvas.height !== calculatedHeight) {
                 canvas.height = calculatedHeight;
             }
@@ -151,7 +160,8 @@ const HierarchyGraphPage: React.FC = () => {
 
             protectedSortedLevels.forEach((level, levelIndex) => {
                 const nodes = levelGroups.get(level)!;
-                const levelWidth = width / (nodes.length + 1);
+                // Distribute nodes horizontally based on dynamic width
+                const levelWidth = calculatedWidth / (nodes.length + 1);
 
                 nodes.forEach((node, nodeIndex) => {
                     nodePositions.set(node.id, {
