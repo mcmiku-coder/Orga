@@ -136,10 +136,20 @@ const HierarchyGraphPage: React.FC = () => {
             });
 
             // Position nodes
-            const sortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b);
-            const levelHeight = height / (sortedLevels.length + 1);
+            // Determine distinct levels ensuring correct sorting order
+            const protectedSortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b);
 
-            sortedLevels.forEach((level, levelIndex) => {
+            // Calculate dynamic height based on number of levels + 1 (padding) * spacing per level
+            // Using 180px per level to ensure no overlap (circle radius is 40px -> 80px diameter + text padding)
+            const calculatedHeight = Math.max(600, (protectedSortedLevels.length + 1) * 180);
+
+            if (canvas.height !== calculatedHeight) {
+                canvas.height = calculatedHeight;
+            }
+
+            const levelHeight = calculatedHeight / (protectedSortedLevels.length + 1);
+
+            protectedSortedLevels.forEach((level, levelIndex) => {
                 const nodes = levelGroups.get(level)!;
                 const levelWidth = width / (nodes.length + 1);
 
@@ -344,6 +354,7 @@ const HierarchyGraphPage: React.FC = () => {
                     <canvas
                         ref={canvasRef}
                         width={1200}
+                        // Default height, will be updated by effect
                         height={600}
                         className="hierarchy-canvas"
                     />
