@@ -140,7 +140,12 @@ const ProfilePage: React.FC = () => {
 
     return (
         <div className="profile-page container fade-in">
-            <button onClick={() => navigate(fromHierarchy ? '/hierarchy' : '/search')} className="back-link">
+            <button
+                onClick={() => navigate(fromHierarchy ? '/hierarchy' : '/search', {
+                    state: fromHierarchy ? location.state?.hierarchyState : undefined
+                })}
+                className="back-link"
+            >
                 <ArrowLeft size={16} /> {fromHierarchy ? 'Back to Hierarchy' : 'Back to Search'}
             </button>
 

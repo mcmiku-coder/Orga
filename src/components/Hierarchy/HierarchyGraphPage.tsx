@@ -1,15 +1,25 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../../context/DataContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { HierarchyLevel } from '../../types';
 
 const HierarchyGraphPage: React.FC = () => {
     const { hierarchy, getHierarchyPath, employees, relationships } = useData();
     const navigate = useNavigate();
-    const [selectedLevel, setSelectedLevel] = useState<number | 'Employee' | null>(null);
-    const [selectedValue, setSelectedValue] = useState<string>('');
-    const [onlyWithColleagues, setOnlyWithColleagues] = useState(true);
-    const [subFilterValue, setSubFilterValue] = useState('');
+    const location = useLocation();
+
+    // Initialize state from location.state if available (restoring context)
+    const initialState = location.state as {
+        selectedLevel?: number | 'Employee' | null;
+        selectedValue?: string;
+        onlyWithColleagues?: boolean;
+        subFilterValue?: string;
+    } | null;
+
+    const [selectedLevel, setSelectedLevel] = useState<number | 'Employee' | null>(initialState?.selectedLevel ?? null);
+    const [selectedValue, setSelectedValue] = useState<string>(initialState?.selectedValue ?? '');
+    const [onlyWithColleagues, setOnlyWithColleagues] = useState(initialState?.onlyWithColleagues ?? true);
+    const [subFilterValue, setSubFilterValue] = useState(initialState?.subFilterValue ?? '');
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     // Get unique levels
@@ -290,7 +300,21 @@ const HierarchyGraphPage: React.FC = () => {
                                         const l6Name = l6Node ? l6Node.name : '-';
 
                                         return (
-                                            <tr key={emp.id} onClick={() => navigate(`/employee/${emp.id}`, { state: { from: 'hierarchy' } })} style={{ cursor: 'pointer' }}>
+                                            <tr
+                                                key={emp.id}
+                                                onClick={() => navigate(`/employee/${emp.id}`, {
+                                                    state: {
+                                                        from: 'hierarchy',
+                                                        hierarchyState: {
+                                                            selectedLevel,
+                                                            selectedValue,
+                                                            onlyWithColleagues,
+                                                            subFilterValue
+                                                        }
+                                                    }
+                                                })}
+                                                style={{ cursor: 'pointer' }}
+                                            >
                                                 <td className="text-center">
                                                     <div className="flex-center" style={{ justifyContent: 'center' }}>
                                                         <div className={`emp-avatar-sm ${roleClass}`}>
